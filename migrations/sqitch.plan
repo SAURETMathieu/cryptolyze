@@ -1,0 +1,7 @@
+%syntax-version=1.0.0
+%project=cryptolize
+
+001_trigger_function_for_profiles 2025-08-10T17:40:08Z SAURET,,, <sauret@sauret-MS-7885> # trigger + function for table profiles and users
+002_role_permissions_table 2025-08-10T18:23:40Z SAURET,,, <sauret@sauret-MS-7885> # table role_permissions + index + rls
+003_config_table 2025-08-10T18:40:58Z SAURET,,, <sauret@sauret-MS-7885> # table config + policy
+004_init_mpd 2025-08-10T19:45:19Z SAURET,,, <sauret@sauret-MS-7885> # init MPD

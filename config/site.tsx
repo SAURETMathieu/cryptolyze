@@ -2,6 +2,7 @@ import {
   Bitcoin,
   Bot,
   CandlestickChart,
+  ChartBar,
   Home,
   Info,
   Settings,
@@ -41,6 +42,11 @@ export const siteConfig = {
       title: "Charts",
       href: "/charts",
       icon: <CandlestickChart className="size-5" />,
+    },
+    {
+      title: "Strategies",
+      href: "/strategies",
+      icon: <ChartBar className="size-5" />,
     },
   ] as NavItem[],
   secondaryNav: [
