@@ -1,0 +1,20 @@
+{
+  "TitlePages": {
+    "home": "Accueil",
+    "signup": "Inscription",
+    "login": "Connexion",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "support": "Support",
+    "emailVerify": "Vérification de l'email",
+    "resetPassword": "Réinitialisation du mot de passe",
+    "tokenVerification": "Vérification du token",
+    "emailChange": "Changement d'email",
+    "faq": "FAQ",
+    "conditions": "Conditions générales",
+    "newsletter": "Newsletter",
+    "legals": "Mentions légales",
+    "policy": "Politique de confidentialité",
+    "contact": "Contact"
+  }
+}

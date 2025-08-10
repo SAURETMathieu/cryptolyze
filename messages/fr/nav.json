@@ -1,0 +1,36 @@
+{
+  "Navbar": {
+    "signout": "Déconnexion",
+    "signin": "Connexion",
+    "signup": "Inscription",
+    "ariaSignin": "Lien vers la page de connexion",
+    "ariaSignup": "Lien vers la page d'inscription",
+    "ariaSupport": "Lien vers la page de support",
+    "ariaSettings": "Lien vers la page de paramètres",
+    "ariaProfile": "Lien vers la page de profil",
+    "ariaLogoLink": "Lien vers la page d'accueil",
+    "avatarAlt": "Avatar de l'utilisateur",
+    "appLogoAlt": "Logo de l'application",
+    "profileLinkLabel": "Profil",
+    "settingsLinkLabel": "Paramètres",
+    "supportLinkLabel": "Support",
+    "menuLabel": "Menu",
+    "openMenuLabel": "Ouvrir le menu burger",
+    "closeMenuLabel": "Fermer le menu burger",
+    "openUserMenuLabel": "Ouvrir le menu utilisateur",
+    "home": "Accueil",
+    "ariaOpen": "Ouvrir le menu",
+    "ariaClose": "Fermer le menu",
+    "ariaBurgerContent": "Contenu du menu burger",
+    "burgerMenuTitle": "Menu"
+  },
+  "ThemeSwitcher": {
+    "ariaLabel": "Changer le thème",
+    "ariaLangage": "Changer la langue du site",
+    "ariaLight": "Thème clair",
+    "ariaDark": "Thème sombre",
+    "toggleTheme": "Changer de thème",
+    "ariaFrench": "Changer la langue du site en Français",
+    "ariaEnglish": "Changer la langue du site en Anglais"
+  }
+}

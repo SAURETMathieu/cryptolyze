@@ -1,0 +1,36 @@
+{
+  "Navbar": {
+    "signout": "Sign out",
+    "signin": "Sign in",
+    "signup": "Sign up",
+    "ariaSignin": "Link to sign in page",
+    "ariaSignup": "Link to sign up page",
+    "ariaSupport": "Link to support page",
+    "ariaSettings": "Link to settings page",
+    "ariaProfile": "Link to profile page",
+    "ariaLogoLink": "Link to home page",
+    "avatarAlt": "User avatar",
+    "appLogoAlt": "Logo of the application",
+    "profileLinkLabel": "Profile",
+    "settingsLinkLabel": "Settings",
+    "supportLinkLabel": "Support",
+    "menuLabel": "Menu",
+    "openMenuLabel": "Open burger menu",
+    "closeMenuLabel": "Close burger menu",
+    "openUserMenuLabel": "Open user menu",
+    "home": "Home",
+    "ariaOpen": "Open the menu",
+    "ariaClose": "Close the menu",
+    "ariaBurgerContent": "Burger menu content",
+    "burgerMenuTitle": "Menu"
+  },
+  "ThemeSwitcher": {
+    "ariaLabel": "Switch theme",
+    "ariaLight": "Light theme",
+    "ariaLangage": "Change site language",
+    "ariaDark": "Dark theme",
+    "toggleTheme": "Toggle theme",
+    "ariaFrench": "Change site language to French",
+    "ariaEnglish": "Change site language to English"
+  }
+}
