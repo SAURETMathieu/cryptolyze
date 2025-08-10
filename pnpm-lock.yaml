@@ -21,8 +21,8 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
       '@hookform/resolvers':
-        specifier: ^5.2.1
-        version: 5.2.1(react-hook-form@7.62.0(react@19.1.0))
+        specifier: ^3.6.0
+        version: 3.6.0(react-hook-form@7.62.0(react@19.1.0))
       '@microlink/react-json-view':
         specifier: ^1.27.0
         version: 1.27.0(@types/react@19.1.9)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -426,10 +426,10 @@ packages:
   '@formatjs/intl-localematcher@0.6.1':
     resolution: {integrity: sha512-ePEgLgVCqi2BBFnTMWPfIghu6FkbZnnBVhO2sSxvLfrdFw7wCHAHiDoM2h4NRgjbaY7+B7HgOLZGkK187pZTZg==}
 
-  '@hookform/resolvers@5.2.1':
-    resolution: {integrity: sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ==}
+  '@hookform/resolvers@3.6.0':
+    resolution: {integrity: sha512-UBcpyOX3+RR+dNnqBd0lchXpoL8p4xC21XP8H6Meb8uve5Br1GCnmg0PcBoKKqPKgGu9GHQ/oygcmPrQhetwqw==}
     peerDependencies:
-      react-hook-form: ^7.55.0
+      react-hook-form: ^7.0.0
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -3636,9 +3636,8 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@hookform/resolvers@5.2.1(react-hook-form@7.62.0(react@19.1.0))':
+  '@hookform/resolvers@3.6.0(react-hook-form@7.62.0(react@19.1.0))':
     dependencies:
-      '@standard-schema/utils': 0.3.0
       react-hook-form: 7.62.0(react@19.1.0)
 
   '@humanfs/core@0.19.1': {}

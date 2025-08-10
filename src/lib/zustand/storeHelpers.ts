@@ -1,5 +1,3 @@
-import { StateCreator } from "zustand";
-
 // Generic type for items with ID
 export interface WithId {
   id: number | string | null;
