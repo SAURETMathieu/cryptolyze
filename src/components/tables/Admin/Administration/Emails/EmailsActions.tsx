@@ -1,7 +1,7 @@
 "use client";
 
-import { EmailConfigDetails } from "@/src/components/pages/Admin/Emails/EmailConfigDetails";
-import { EmailConfigForm } from "@/src/components/pages/Admin/Emails/EmailConfigForm";
+import { EmailConfigDetails } from "@/src/pages/Admin/Emails/EmailConfigDetails";
+import { EmailConfigForm } from "@/src/pages/Admin/Emails/EmailConfigForm";
 import { useModal } from "@/src/context/modalProvider";
 import { EmailType } from "@/src/store/admin/email.store";
 import { Row } from "@tanstack/react-table";

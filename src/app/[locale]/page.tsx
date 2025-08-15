@@ -1,5 +1,5 @@
-import { HomeMain } from "@/src/components/pages/Home/HomeMain";
 import { Metadata } from "next";
+import { HomeMain } from "@/src/pages/Site/Home/HomeMain";
 import { getTranslations } from "next-intl/server";
 
 type PageProps = {

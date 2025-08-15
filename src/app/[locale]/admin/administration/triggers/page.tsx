@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { TriggersPage } from "@/src/components/pages/Admin/Triggers/TriggersManager";
+import { TriggersPage } from "@/src/pages/Admin/Triggers/TriggersManager";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

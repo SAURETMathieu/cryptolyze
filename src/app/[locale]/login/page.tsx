@@ -1,7 +1,7 @@
 import { Metadata } from "next";
-import Login from "@/src/components/pages/HUB/Auth/Login";
 import { redirect } from "@/src/i18n/navigation";
 import { createServer } from "@/src/lib/supabase/server";
+import Login from "@/src/pages/Site/Auth/Login";
 import { getTranslations } from "next-intl/server";
 
 type PageProps = {

@@ -1,10 +1,10 @@
 "use server";
 
+import { createServer } from "@/src/lib/supabase/server";
 import {
   EmailConfigSchemaType,
   generateEmailConfigSchema,
-} from "@/src/components/pages/Admin/Emails/emailConfigFormConfig";
-import { createServer } from "@/src/lib/supabase/server";
+} from "@/src/pages/Admin/Emails/emailConfigFormConfig";
 
 import { validateIntegerId } from "../utils/validateDatas";
 import { validateSimpleSchema } from "../utils/validateSchema";

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getRoles, getSchemas } from "@/src/app/actions/admin/roles";
-import AdminPermissionsMain from "@/src/components/pages/Admin/Permissions/AdminPermissionsPage";
+import AdminPermissionsMain from "@/src/pages/Admin/Permissions/AdminPermissionsPage";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

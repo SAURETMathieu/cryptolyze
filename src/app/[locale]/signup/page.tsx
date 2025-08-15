@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import Signup from "@/src/components/pages/HUB/Auth/SignUp";
+import Signup from "@/src/pages/Site/Auth/SignUp";
 import { getTranslations } from "next-intl/server";
 
 type PageProps = {

@@ -14,11 +14,6 @@ import {
 } from "@/src/app/actions/admin/roles";
 import { CreateNewRoleForm } from "@/src/components/forms/admin/RoleForms/NewRole";
 import { LoadIcon } from "@/src/components/icons/LoadIcon";
-import FunctionPermissions from "@/src/components/pages/Admin/Permissions/FunctionPermissions";
-import RoleSelector from "@/src/components/pages/Admin/Permissions/RoleSelector";
-import SchemaPermissions from "@/src/components/pages/Admin/Permissions/SchemaPermissions";
-import SchemaSelector from "@/src/components/pages/Admin/Permissions/SchemaSelector";
-import TablePermissions from "@/src/components/pages/Admin/Permissions/TablePermissions";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -34,6 +29,11 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { useModal } from "@/src/context/modalProvider";
+import FunctionPermissions from "@/src/pages/Admin/Permissions/FunctionPermissions";
+import RoleSelector from "@/src/pages/Admin/Permissions/RoleSelector";
+import SchemaPermissions from "@/src/pages/Admin/Permissions/SchemaPermissions";
+import SchemaSelector from "@/src/pages/Admin/Permissions/SchemaSelector";
+import TablePermissions from "@/src/pages/Admin/Permissions/TablePermissions";
 import { getObjectChangesFunction } from "@/src/utils/compare/getObjectChangesFunction";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";

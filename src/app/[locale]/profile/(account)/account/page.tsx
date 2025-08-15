@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import AccountInfos from "@/src/components/pages/HUB/Account/AccountInfos";
+import AccountInfos from "@/src/pages/Site/Account/AccountInfos";
 import { getTranslations } from "next-intl/server";
 
 type PageProps = {

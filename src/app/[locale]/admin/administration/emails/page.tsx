@@ -1,6 +1,5 @@
 import { Metadata } from "next";
-import { EmailsPage } from "@/src/components/pages/Admin/Emails/EmailsManager";
-import { createServer } from "@/src/lib/supabase/server";
+import { EmailsPage } from "@/src/pages/Admin/Emails/EmailsManager";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

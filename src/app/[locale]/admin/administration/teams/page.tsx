@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { getRoles } from "@/src/app/actions/admin/roles";
 import { getTeamMembers } from "@/src/app/actions/admin/teams";
-import { AdminTeamsMain } from "@/src/components/pages/Admin/Team/AdminTeamsPage";
+import { AdminTeamsMain } from "@/src/pages/Admin/Team/AdminTeamsPage";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
