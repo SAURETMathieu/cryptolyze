@@ -50,10 +50,6 @@ function CountrySelect({
 }: CountrySelectProps) {
   const locale = useLocale();
 
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
   const filteredCountries = useMemo(() => {
     const countryRegionDataTranslated = countryRegionData.map(
       (country: CountryRegion) => {
