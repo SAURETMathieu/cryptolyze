@@ -12,33 +12,6 @@ export const useGlobalStore = create<GlobalStoreState>((set, get) => ({
   setStore: (store) => set(store),
 }));
 
-export const fetchCountries = async () => {
-  const { lastUpdated } = useGlobalStore.getState();
-
-  const cacheDuration = 5 * 60 * 1000; // 5 minutes en millisecondes
-  const now = Date.now();
-
-  if (!lastUpdated || now - lastUpdated > cacheDuration) {
-    try {
-      const response = await fetch("/api/countries");
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch countries");
-      }
-
-      const data = await response.json();
-
-      if (data.isSuccess) {
-        useGlobalStore.setState({
-          lastUpdated: now,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching countries:", error);
-    }
-  }
-};
-
 export const initUserInfos = async () => {
   useGlobalStore.setState({
     userInfosLoaded: true,
