@@ -1,7 +1,7 @@
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/src/lib/supabase/middleware";
 import { authentificationRoutes, privateRoutes } from "@/src/routes";
 import createMiddleware from "next-intl/middleware";
-import { NextResponse, type NextRequest } from "next/server";
 
 import { locales } from "./config";
 import { routing } from "./i18n/routing";
@@ -21,9 +21,6 @@ const isPrivateRoute = (pathname: string) => {
 };
 
 export async function middleware(request: NextRequest) {
-  if (request?.nextUrl?.pathname?.startsWith("/customer")) {
-    return NextResponse.next();
-  }
   // Handle session updates
   const sessionResponse = await updateSession(request);
 
@@ -63,20 +60,6 @@ export async function middleware(request: NextRequest) {
     if (!infosVerified && url.pathname !== `/${locale}/reset-password`) {
       url.pathname = `/${locale}/reset-password`;
       return NextResponse.redirect(url);
-    }
-    if (user.profile?.type) {
-      if (url.pathname === `/${locale}/register`) {
-        url.pathname = `/${locale}`;
-        return NextResponse.redirect(url);
-      }
-    } else {
-      if (
-        url.pathname !== `/${locale}/register` &&
-        url.pathname !== `/${locale}/reset-password`
-      ) {
-        url.pathname = `/${locale}/register`;
-        return NextResponse.redirect(url);
-      }
     }
   }
 

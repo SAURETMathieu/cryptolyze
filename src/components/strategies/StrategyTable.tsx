@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DataAdvancedTable } from "@/src/components/advanced-tables/DataAdvancedTable";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { Strategy } from "@/src/types/strategy";
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Play, Plus } from "lucide-react";
 import { toast } from "sonner";
+
+import { DataTable } from "../tables/DataTable";
 
 interface StrategyTableProps {
   onStrategySelect: (strategyId: number) => void;
@@ -18,7 +18,7 @@ export function StrategyTable({
   onStrategySelect,
   onCryptoSelect,
 }: StrategyTableProps) {
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [strategies, setStrategies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function StrategyTable({
     }
   };
 
-  const strategyColumns: ColumnDef<Strategy>[] = [
+  const strategyColumns: ColumnDef<any>[] = [
     {
       accessorKey: "name",
       header: "Nom",
@@ -139,11 +139,9 @@ export function StrategyTable({
           </CardContent>
         </Card>
       ) : (
-        <DataAdvancedTable
+        <DataTable
           columns={strategyColumns}
           data={strategies}
-          rowCount={strategies.length}
-          isFetching={false}
           hideExport={false}
         />
       )}

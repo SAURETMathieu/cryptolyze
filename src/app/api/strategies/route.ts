@@ -1,6 +1,6 @@
-// import { createApiResponse } from "@/src/lib/api/createApiResponse";
-// import { withApiHandler } from "@/src/lib/api/withApiHandler";
-// import { createServer } from "@/src/lib/supabase/server";
+import { createApiResponse } from "@/src/lib/api/createApiResponse";
+import { withApiHandler } from "@/src/lib/api/withApiHandler";
+import { createServer } from "@/src/lib/supabase/server";
 
 // export const POST = withApiHandler<any>(
 //   async (req, user) => {
@@ -55,22 +55,22 @@
 //   }
 // );
 
-// export const GET = withApiHandler<any>(
-//   async (req, user) => {
-//     const supabase = createServer();
-//     const { data, error } = await supabase
-//       .from("strategy")
-//       .select(`*`)
-//       .order("created_at", { ascending: false });
+export const GET = withApiHandler<any>(
+  async (req, user) => {
+    const supabase = createServer();
+    const { data, error } = await supabase
+      .from("strategy")
+      .select(`*`)
+      .order("created_at", { ascending: false });
 
-//     if (error) {
-//       throw new Error(error.message);
-//     }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-//     return createApiResponse(true, "strategies_fetched", data, null, 200);
-//   },
-//   {
-//     requireAuth: false,
-//     defaultDataOnError: [],
-//   }
-// );
+    return createApiResponse(true, "strategies_fetched", data, null, 200);
+  },
+  {
+    requireAuth: false,
+    defaultDataOnError: [],
+  }
+);
