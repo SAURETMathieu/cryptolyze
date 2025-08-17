@@ -104,6 +104,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "balance_history_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "balance_history_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
@@ -171,6 +178,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bot_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bot_strategy_id_fkey"
             columns: ["strategy_id"]
             isOneToOne: false
@@ -209,6 +223,7 @@ export type Database = {
           created_at: string
           currency: string
           digit: number
+          first_year: number | null
           id: number
           logo_url: string
           name: string
@@ -219,6 +234,7 @@ export type Database = {
           created_at?: string
           currency?: string
           digit: number
+          first_year?: number | null
           id?: number
           logo_url: string
           name: string
@@ -229,6 +245,7 @@ export type Database = {
           created_at?: string
           currency?: string
           digit?: number
+          first_year?: number | null
           id?: number
           logo_url?: string
           name?: string
@@ -279,6 +296,13 @@ export type Database = {
             columns: ["crypto_id"]
             isOneToOne: false
             referencedRelation: "crypto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crypto_day_history_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
             referencedColumns: ["id"]
           },
         ]
@@ -476,6 +500,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "strategy_test_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "strategy_test_strategy_id_fkey"
             columns: ["strategy_id"]
             isOneToOne: false
@@ -654,6 +685,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transaction_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transaction_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
@@ -746,6 +784,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wallet_cryptos_crypto_id_fkey"
+            columns: ["crypto_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_yearly_history_status"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "wallet_cryptos_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
@@ -756,7 +801,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      crypto_yearly_history_status: {
+        Row: {
+          asset: string | null
+          complete_years: number | null
+          created_at: string | null
+          currency: string | null
+          digit: number | null
+          first_year: number | null
+          history_completeness: Json | null
+          id: number | null
+          incomplete_years: number | null
+          logo_url: string | null
+          name: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
