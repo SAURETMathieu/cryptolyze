@@ -45,6 +45,7 @@ CREATE TABLE public.crypto (
     "name" TEXT NOT NULL,
     "digit" INTEGER NOT NULL,
     "logo_url" TEXT NOT NULL,
+    "first_year" INTEGER,
     "currency" TEXT NOT NULL DEFAULT 'USDT',
     "created_at" timestamp
     with
