@@ -7,7 +7,7 @@ import { DataTableColumnHeader } from "@/src/components/ui/tools/dataTableColumn
 import { getCryptoHistoryCompleteness } from "@/src/utils/getCryptoHistoryCompleteness";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
 
-// import { TriggersActions } from "./TriggersActions";
+import { CryptoHistoriesStatusActions } from "./CryptoHistoriesStatusActions";
 
 const multiColumnFilter: FilterFn<any> = (row, columnId, filterValue) => {
   const name = row.getValue("name") as string;
@@ -110,8 +110,8 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
     enableSorting: false,
   },
 
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <TriggersActions row={row} />,
-  // },
+  {
+    id: "actions",
+    cell: ({ row }) => <CryptoHistoriesStatusActions row={row} />,
+  },
 ];
