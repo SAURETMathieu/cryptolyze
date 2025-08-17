@@ -1,11 +1,13 @@
 "use client";
 
+import { Fragment } from "react";
 import * as column from "@/src/components/tables/columns";
-import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
+import { Separator } from "@/src/components/ui/separator";
 import { DataTableColumnHeader } from "@/src/components/ui/tools/dataTableColumnHeader";
 import { getCryptoHistoryCompleteness } from "@/src/utils/getCryptoHistoryCompleteness";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
+import { CheckCircle, XCircle } from "lucide-react";
 
 import { CryptoHistoriesStatusActions } from "./CryptoHistoriesStatusActions";
 
@@ -88,20 +90,22 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
     cell: ({ row }) => {
       const datas = row.original;
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {datas.history_completeness &&
             Object.entries(datas.history_completeness)
-              .slice(-5)
-              .map(([year, is_complete]) => (
-                <div key={year} className="flex items-center flex-col gap-2">
-                  <h2 className="text-sm font-bold">{year}</h2>
-                  <Badge
-                    variant={is_complete ? "green" : "red"}
-                    className="rounded-lg"
-                  >
-                    {is_complete ? "Complete" : "Incomplete"}
-                  </Badge>
-                </div>
+              .slice(-7)
+              .map(([year, is_complete], index) => (
+                <Fragment key={year}>
+                  {index !== 0 && <Separator orientation="vertical" className="h-10" />}
+                  <div className="flex items-center flex-col gap-1">
+                    <h2 className="text-sm font-bold">{year}</h2>
+                    {is_complete ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                </Fragment>
               ))}
         </div>
       );

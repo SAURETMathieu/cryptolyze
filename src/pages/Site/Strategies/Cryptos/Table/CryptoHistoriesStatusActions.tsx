@@ -6,6 +6,8 @@ import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
+import { CryptoHistoriesStatusModal } from "./CryptoHistoriesStatusModal";
+
 interface ActionsProps<TData> {
   row: Row<TData>;
 }
@@ -19,7 +21,7 @@ export function CryptoHistoriesStatusActions<TData>({
   const handleOpenModal = () => {
     setTitle(`Historique complet - ${crypto.name} (${crypto.asset})`);
     setDescription(`Gestion des données historiques par année`);
-    openModal(<div>To implement</div>);
+    openModal(<CryptoHistoriesStatusModal crypto={crypto} />);
   };
 
   return (
