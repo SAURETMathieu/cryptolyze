@@ -2,7 +2,9 @@
 
 import * as column from "@/src/components/tables/columns";
 import { Badge } from "@/src/components/ui/badge";
+import { Progress } from "@/src/components/ui/progress";
 import { DataTableColumnHeader } from "@/src/components/ui/tools/dataTableColumnHeader";
+import { getCryptoHistoryCompleteness } from "@/src/utils/getCryptoHistoryCompleteness";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
 
 // import { TriggersActions } from "./TriggersActions";
@@ -24,19 +26,19 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
     altAccessorKey: "name",
     size: 40,
     className: "border-none",
-    enableSorting: true,
     enableHiding: true,
   }),
 
-  column.createStringColumn({
+  column.createNameAndSkuColumn({
     id: "name",
     accessorKey: "name",
+    skuAccessorKey: "asset",
     title: t("name"),
-    className: "max-w-[200px]",
-    textClassName: "truncate",
+    className: "max-w-[120px] md:max-w-[150px] lg:max-w-[200px]",
     enableSorting: true,
     enableHiding: true,
     filterFn: multiColumnFilter,
+    withCopyName: false,
   }),
 
   column.createStringColumn({
@@ -51,27 +53,56 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
     id: "history_completeness",
     accessorKey: "history_completeness",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="History Completeness" />
+      <DataTableColumnHeader
+        column={column}
+        title={t("history_completeness")}
+      />
     ),
     cell: ({ row }) => {
-      const datas: any = row.original;
+      const datas = row.original;
+
+      return (
+        <div className="flex items-center gap-2">
+          <Progress
+            value={getCryptoHistoryCompleteness(datas.history_completeness)}
+            className="w-16 h-3"
+          />
+          <span className="text-sm">
+            {Math.round(
+              getCryptoHistoryCompleteness(datas.history_completeness)
+            )}
+            %
+          </span>
+        </div>
+      );
+    },
+    enableHiding: false,
+    enableSorting: false,
+  },
+  {
+    id: "years",
+    accessorKey: "history_completeness",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t("years")} />
+    ),
+    cell: ({ row }) => {
+      const datas = row.original;
       return (
         <div className="flex items-center gap-2">
           {datas.history_completeness &&
-            Object.entries(datas.history_completeness).map(
-              ([year, is_complete]) => (
-                <div className="flex items-center flex-col gap-2">
+            Object.entries(datas.history_completeness)
+              .slice(-5)
+              .map(([year, is_complete]) => (
+                <div key={year} className="flex items-center flex-col gap-2">
                   <h2 className="text-sm font-bold">{year}</h2>
                   <Badge
-                    key={year}
                     variant={is_complete ? "green" : "red"}
                     className="rounded-lg"
                   >
                     {is_complete ? "Complete" : "Incomplete"}
                   </Badge>
                 </div>
-              )
-            )}
+              ))}
         </div>
       );
     },

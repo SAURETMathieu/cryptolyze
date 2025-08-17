@@ -2,14 +2,7 @@ import "server-only";
 
 import { createServer } from "@/src/lib/supabase/server";
 
-const TEAM_ROLES = [
-  "service_role",
-  "supabase_admin",
-  "achat",
-  "logistique",
-  "marketing",
-  "sav",
-];
+const TEAM_ROLES = ["service_role", "supabase_admin"];
 
 export async function getUserInfos(requireTeam: boolean = false) {
   const supabase = createServer();

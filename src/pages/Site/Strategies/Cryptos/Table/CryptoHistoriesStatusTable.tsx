@@ -12,33 +12,17 @@ import { toast } from "sonner";
 
 import { createColumns } from "./cryptoHistoriesStatusColumns";
 
-export function CryptoHistoriesStatusTable() {
+export function CryptoHistoriesStatusTable({
+  cryptos,
+  isFetching,
+}: {
+  cryptos: any[];
+  isFetching: boolean;
+}) {
   const tTable = useTranslations("Tables");
-  const [isFetching, setIsFetching] = useState(true);
-  const [cryptos, setCryptos] = useState<any[]>([]);
 
   // const columnConfigs: ColumnConfig[] = [
   // ];
-
-  useEffect(() => {
-    const fetchCryptos = async () => {
-      try {
-        const response = await fetch("/api/crypto-histories");
-        const { data, success } = await response.json();
-        if (success) {
-          setCryptos(data);
-        } else {
-          throw new Error(data.message);
-        }
-        setIsFetching(false);
-      } catch (error: any) {
-        toast.error(error.message);
-      } finally {
-        setIsFetching(false);
-      }
-    };
-    fetchCryptos();
-  }, []);
 
   if (isFetching) {
     return (
