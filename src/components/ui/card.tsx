@@ -20,7 +20,7 @@ const cardVariants = cva(
           "bg-accent hover:bg-accent/90 hover:ring hover:ring-accent-foreground",
       },
       size: {
-        default: "p-6",
+        default: "p-0",
         sm: "p-4",
         lg: "p-8",
         xl: "p-12",

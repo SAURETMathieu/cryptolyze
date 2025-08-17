@@ -16,6 +16,8 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 
+import { CryptoTabsContent } from "./Cryptos/CryptoTabsContent";
+
 export function StrategiesPage() {
   const [selectedStrategy, setSelectedStrategy] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState<number | null>(null);
@@ -44,7 +46,7 @@ export function StrategiesPage() {
           </p>
         </div>
 
-        <Tabs className="w-full" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs className="w-full" defaultValue="strategies">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="strategies">Stratégies</TabsTrigger>
             <TabsTrigger value="strategy-details">
@@ -100,33 +102,7 @@ export function StrategiesPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="crypto-details" className="space-y-4">
-            {selectedCrypto ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Détails de la Crypto #{selectedCrypto}</CardTitle>
-                  <CardDescription>
-                    Résultats de toutes les stratégies pour cette crypto
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Composant CryptoDetails à implémenter
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <p className="text-muted-foreground">
-                      Sélectionnez une crypto pour voir ses détails
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+          <CryptoTabsContent />
         </Tabs>
       </section>
     </main>

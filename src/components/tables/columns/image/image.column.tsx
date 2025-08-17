@@ -18,6 +18,7 @@ interface CustomColumnProps {
   enableMagnifier?: boolean;
   enableModal?: boolean;
   modalSize?: "sm" | "md" | "lg" | "xl";
+  className?: string;
 }
 
 /**
@@ -36,6 +37,7 @@ interface CustomColumnProps {
  * @param {boolean} [params.enableMagnifier=false] - Enables zoom effect on hover.
  * @param {boolean} [params.enableModal=true] - Enables modal view on click.
  * @param {string} [params.modalSize="lg"] - Size of the modal (sm, md, lg, xl).
+ * @param {string} [params.className] - Additional CSS classes for the image.
  *
  * @returns {ColumnDef<any>} Column definition object for Tanstack Table.
  *
@@ -63,6 +65,7 @@ export function createImageColumn({
   enableMagnifier = false,
   enableModal = true,
   modalSize = "lg",
+  className,
 }: CustomColumnProps): ColumnDef<any> {
   return {
     id,
@@ -88,7 +91,7 @@ export function createImageColumn({
           alt={altText}
           width={size}
           height={size}
-          className={`border-foreground rounded-lg border`}
+          className={cn(`border-foreground rounded-lg border`, className)}
           enableMagnifier={enableMagnifier}
           enableModal={enableModal}
           modalSize={modalSize}
@@ -99,7 +102,7 @@ export function createImageColumn({
           alt={altText}
           width={size}
           height={size}
-          className={`border-foreground rounded-lg border`}
+          className={cn(`border-foreground rounded-lg border`, className)}
         />
       );
     },
