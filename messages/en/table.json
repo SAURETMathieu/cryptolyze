@@ -414,6 +414,14 @@
     "last_3_purchases": "Last 3",
     "oldest_price_ht": "Oldest price",
     "oldest_purchase_date": "Oldest purchase",
-    "is_active": "Active"
+    "is_active": "Active",
+    "history_completeness": "Completeness",
+    "complete": "Complete",
+    "incomplete": "Incomplete",
+    "logo": "Logo",
+    "currency": "Currency",
+    "asset": "Asset",
+    "progress": "Progress",
+    "years": "Years"
   }
 }
