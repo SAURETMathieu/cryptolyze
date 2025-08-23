@@ -263,19 +263,19 @@ export type Database = {
           max_price: number
           min_price: number
           open_price: number
-          prices_per_minute: number[]
+          prices_per_minute: number[] | null
           volume: number | null
         }
         Insert: {
-          average_price: number
-          close_price: number
+          average_price?: number
+          close_price?: number
           crypto_id: number
           date: string
           id?: number
-          max_price: number
-          min_price: number
-          open_price: number
-          prices_per_minute: number[]
+          max_price?: number
+          min_price?: number
+          open_price?: number
+          prices_per_minute?: number[] | null
           volume?: number | null
         }
         Update: {
@@ -287,7 +287,7 @@ export type Database = {
           max_price?: number
           min_price?: number
           open_price?: number
-          prices_per_minute?: number[]
+          prices_per_minute?: number[] | null
           volume?: number | null
         }
         Relationships: [
@@ -820,7 +820,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      request_crypto_day_history: {
+        Args: { p_crypto_id: number; p_year: number }
+        Returns: boolean
+      }
     }
     Enums: {
       bot_status: "running" | "stopped" | "paused" | "error" | "awaiting_start"

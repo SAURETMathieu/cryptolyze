@@ -5,6 +5,8 @@ import { signUpFormSchema } from "@/src/components/forms/Hub/AuthForms/signUpFor
 import { updatePasswordFormSchema } from "@/src/components/forms/Hub/AuthForms/updatePasswordFormConfig";
 import { z } from "zod";
 
+import { Database } from "./supabase";
+
 export type LoginFormType = z.infer<ReturnType<typeof generateLoginFormSchema>>;
 
 export type SignUpFormType = z.infer<ReturnType<typeof signUpFormSchema>>;
@@ -20,3 +22,6 @@ export type CreateNewRoleFormType = z.infer<
 export type UpdatePasswordFormType = z.infer<
   ReturnType<typeof updatePasswordFormSchema>
 >;
+
+export type CryptoYearlyHistoryStatusType =
+  Database["public"]["Views"]["crypto_yearly_history_status"]["Row"];
