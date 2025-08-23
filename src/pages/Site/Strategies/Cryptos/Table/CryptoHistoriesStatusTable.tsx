@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { DataTable } from "@/src/components/tables/DataTable";
 import { DataTableSkeleton } from "@/src/components/tables/DataTableSkeleton";
 import {
@@ -7,24 +6,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { useCryptoHistoryStore } from "@/src/store/cryptoHistory.store";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 import { createColumns } from "./cryptoHistoriesStatusColumns";
 
-export function CryptoHistoriesStatusTable({
-  cryptos,
-  isFetching,
-}: {
-  cryptos: any[];
-  isFetching: boolean;
-}) {
+export function CryptoHistoriesStatusTable() {
+  const cryptoHistories = useCryptoHistoryStore(
+    (state) => state.cryptoHistories
+  );
+  const cryptoHistoriesFetched = useCryptoHistoryStore(
+    (state) => state.cryptoHistoriesFetched
+  );
   const tTable = useTranslations("Tables");
 
   // const columnConfigs: ColumnConfig[] = [
   // ];
 
-  if (isFetching) {
+  if (!cryptoHistoriesFetched) {
     return (
       <DataTableSkeleton
         columns={createColumns(tTable)}
@@ -45,14 +44,14 @@ export function CryptoHistoriesStatusTable({
       </CardHeader>
       <CardContent>
         <DataTable
-          data={cryptos}
+          data={cryptoHistories}
           columns={createColumns(tTable)}
           // columnConfigs={columnConfigs}
           filterTextOptions={{
             id: "name",
             placeholder: tTable("name") + " " + tTable("asset"),
           }}
-          // hideColumns={{ history_completeness: false }}
+          showColumns={{ asset: false }}
           hideExport
         />
       </CardContent>

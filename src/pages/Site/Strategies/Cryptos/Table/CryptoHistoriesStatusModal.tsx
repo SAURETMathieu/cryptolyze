@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { CheckCircle, Download, XCircle } from "lucide-react";
+import {
+  updateCryptoHistoryByIdStore,
+  useCryptoHistoryStore,
+} from "@/src/store/cryptoHistory.store";
+import { CryptoYearlyHistoryStatusType } from "@/types";
+import { CheckCircle, Download, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface CryptoHistoriesStatusModalProps {
-  crypto: any;
+  crypto: CryptoYearlyHistoryStatusType;
 }
 
 export function CryptoHistoriesStatusModal({
@@ -14,26 +19,45 @@ export function CryptoHistoriesStatusModal({
 }: CryptoHistoriesStatusModalProps) {
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const cryptoHistories = useCryptoHistoryStore(
+    (state) => state.cryptoHistories
+  );
+  const currentCrypto =
+    cryptoHistories.find((c) => c.id === crypto.id) || crypto;
 
   const handleFetchYear = async (year: string) => {
     setIsLoading((prev) => ({ ...prev, [year]: true }));
 
     try {
-      const startDate = `${year}-01-01`;
-      const endDate = `${year}-12-31`;
-
-      const response = await fetch(
-        `/api/crypto-history-request?crypto=${crypto.asset}&interval=1m&startDate=${startDate}&endDate=${endDate}`
-      );
+      const response = await fetch(`/api/crypto-history-request`, {
+        method: "POST",
+        body: JSON.stringify({
+          crypto_id: currentCrypto.id,
+          year: parseInt(year),
+        }),
+      });
 
       const result = await response.json();
 
       if (result.success) {
-        toast.success(
-          `Données ${year} récupérées avec succès pour ${crypto.name}`
-        );
+        toast.success(result.message);
+        updateCryptoHistoryByIdStore(currentCrypto.id!, {
+          history_completeness: {
+            ...((currentCrypto.history_completeness as Record<
+              string,
+              string
+            >) || {}),
+            [year]: "loading",
+          },
+        });
       } else {
-        throw new Error(result.error || "Erreur lors de la récupération");
+        throw new Error(
+          result.message ||
+            "Erreur lors de la demande d'historique des données pour l'année " +
+              year +
+              " pour la crypto " +
+              currentCrypto.name
+        );
       }
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
@@ -46,55 +70,69 @@ export function CryptoHistoriesStatusModal({
     setIsLoadingAll(true);
 
     try {
-      const incompleteYears = Object.entries(crypto.history_completeness || {})
-        .filter(([_, isComplete]) => !isComplete)
+      const notRequestedYears = Object.entries(
+        currentCrypto.history_completeness || {}
+      )
+        .filter(([_, status]) => status === "not_requested")
         .map(([year]) => year)
-        .sort((a, b) => parseInt(a) - parseInt(b)); // Trier par année croissante
+        .sort((a, b) => parseInt(a) - parseInt(b));
 
-      if (incompleteYears.length === 0) {
+      if (notRequestedYears.length === 0) {
         toast.info("Aucune année manquante à récupérer");
         return;
       }
 
       toast.info(
-        `Début de la récupération de ${incompleteYears.length} année(s) manquante(s)...`
+        `Début de la récupération de ${notRequestedYears.length} année(s) manquante(s)...`
       );
 
       let successCount = 0;
       let errorCount = 0;
+      const yearsToUpdate = [];
 
-      for (const year of incompleteYears) {
+      for (const year of notRequestedYears) {
         try {
-          const startDate = `${year}-01-01`;
-          const endDate = `${year}-12-31`;
-
-          const response = await fetch(
-            `/api/crypto-history-request?crypto=${crypto.asset}&interval=1m&startDate=${startDate}&endDate=${endDate}`
-          );
+          const response = await fetch(`/api/crypto-history-request`, {
+            method: "POST",
+            body: JSON.stringify({
+              crypto_id: currentCrypto.id,
+              year: parseInt(year),
+            }),
+          });
 
           const result = await response.json();
 
           if (result.success) {
             successCount++;
-            toast.success(`✅ ${year} récupérée`);
+            yearsToUpdate.push(year);
           } else {
             errorCount++;
-            toast.error(`❌ Erreur ${year}: ${result.error}`);
+            toast.error(result.message);
           }
-
-          // Délai entre les requêtes pour éviter la surcharge
-          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error: any) {
           errorCount++;
           toast.error(`❌ Erreur ${year}: ${error.message}`);
         }
       }
 
+      updateCryptoHistoryByIdStore(currentCrypto.id!, {
+        history_completeness: {
+          ...((currentCrypto.history_completeness as Record<string, string>) ||
+            {}),
+          ...yearsToUpdate.reduce(
+            (acc, year) => {
+              acc[year] = "loading";
+              return acc;
+            },
+            {} as Record<string, string>
+          ),
+        },
+      });
+
       if (successCount > 0) {
         toast.success(
           `Récupération terminée: ${successCount} succès, ${errorCount} erreurs`
         );
-        window.location.reload();
       } else {
         toast.error("Aucune année n'a pu être récupérée");
       }
@@ -105,29 +143,31 @@ export function CryptoHistoriesStatusModal({
     }
   };
 
-  const years = Object.entries(crypto.history_completeness || {}).sort(
+  const years = Object.entries(currentCrypto.history_completeness || {}).sort(
     ([a], [b]) => parseInt(b) - parseInt(a)
-  ); // Trier par année décroissante
+  ); // Sort by year descending
 
-  const incompleteYears = years.filter(([_, isComplete]) => !isComplete);
-  const completeYears = years.filter(([_, isComplete]) => isComplete);
+  const notRequestedYears = years.filter(
+    ([_, status]) => status === "not_requested"
+  );
+  const completeYears = years.filter(([_, status]) => status === "complete");
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <img
-          src={crypto.logo_url}
-          alt={crypto.name}
+          src={currentCrypto.logo_url || ""}
+          alt={currentCrypto.name || ""}
           className="w-8 h-8 rounded-full"
         />
         <div>
-          <h3 className="font-semibold">{crypto.name}</h3>
-          <p className="text-sm text-muted-foreground">{crypto.asset}</p>
+          <h3 className="font-semibold">{currentCrypto.name}</h3>
+          <p className="text-sm text-muted-foreground">{currentCrypto.asset}</p>
         </div>
       </div>
 
       {/* Bouton pour télécharger toutes les années manquantes */}
-      {incompleteYears.length > 0 && (
+      {notRequestedYears.length > 0 && (
         <Card className="p-4 bg-orange-100 border-orange-200">
           <CardContent className="p-0">
             <div className="flex items-center justify-between">
@@ -136,7 +176,7 @@ export function CryptoHistoriesStatusModal({
                   Téléchargement en lot
                 </h4>
                 <p className="text-sm text-orange-700 font-light">
-                  {incompleteYears.length} année(s) manquante(s) •{" "}
+                  {notRequestedYears.length} année(s) manquante(s) •{" "}
                   {completeYears.length} année(s) complète(s)
                 </p>
               </div>
@@ -152,7 +192,7 @@ export function CryptoHistoriesStatusModal({
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    Télécharger tout ({incompleteYears.length})
+                    Télécharger tout ({notRequestedYears.length})
                   </div>
                 )}
               </Button>
@@ -162,21 +202,23 @@ export function CryptoHistoriesStatusModal({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {years.map(([year, isComplete]) => (
+        {years.map(([year, status]) => (
           <Card key={year} className="p-3">
             <CardContent className="p-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-lg">{year}</span>
-                  {isComplete ? (
+                  {status === "complete" ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
+                  ) : status === "not_requested" ? (
                     <XCircle className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {!isComplete && (
+                  {status === "not_requested" && (
                     <Button
                       size="sm"
                       variant="outline"

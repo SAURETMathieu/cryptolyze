@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -7,8 +7,11 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { TabsContent } from "@/src/components/ui/tabs";
+import {
+  fetchAllCryptoHistories,
+  useCryptoHistoryStore,
+} from "@/src/store/cryptoHistory.store";
 import { Database, LucideIcon, TrendingDown, TrendingUp } from "lucide-react";
-import { toast } from "sonner";
 
 import { CryptoHistoriesStatusTable } from "./Table/CryptoHistoriesStatusTable";
 
@@ -35,18 +38,34 @@ function StatsCard({ title, value, description, icon: Icon }: StatsCardProps) {
 }
 
 export function CryptoTabsContent() {
-  const [isFetching, setIsFetching] = useState(true);
-  const [cryptos, setCryptos] = useState<any[]>([]);
+  // Store state
+  const cryptoHistories = useCryptoHistoryStore(
+    (state) => state.cryptoHistories
+  );
 
-  const totalCryptos = cryptos.length;
-  const totalYears = cryptos.reduce(
-    (acc, crypto) => acc + Object.keys(crypto.history_completeness).length,
+  // Calculs
+  const totalCryptos = cryptoHistories.length;
+  const totalYears = cryptoHistories.reduce(
+    (acc, crypto) =>
+      acc + Object.keys(crypto.history_completeness || {}).length,
     0
   );
 
-  const completeYears = cryptos.reduce(
+  const completeYears = cryptoHistories.reduce(
     (acc, crypto) =>
-      acc + Object.values(crypto.history_completeness).filter(Boolean).length,
+      acc +
+      Object.values(crypto.history_completeness || {}).filter(
+        (year) => year === "complete"
+      ).length,
+    0
+  );
+
+  const loadingYears = cryptoHistories.reduce(
+    (acc, crypto) =>
+      acc +
+      Object.values(crypto.history_completeness || {}).filter(
+        (year) => year === "loading"
+      ).length,
     0
   );
 
@@ -54,24 +73,9 @@ export function CryptoTabsContent() {
 
   const completePercentage = Math.round((completeYears / totalYears) * 100);
 
+  // Fetch data
   useEffect(() => {
-    const fetchCryptos = async () => {
-      try {
-        const response = await fetch("/api/crypto-histories");
-        const { data, success } = await response.json();
-        if (success) {
-          setCryptos(data);
-        } else {
-          throw new Error(data.message);
-        }
-        setIsFetching(false);
-      } catch (error: any) {
-        toast.error(error.message);
-      } finally {
-        setIsFetching(false);
-      }
-    };
-    fetchCryptos();
+    fetchAllCryptoHistories();
   }, []);
 
   return (
@@ -100,14 +104,11 @@ export function CryptoTabsContent() {
             <StatsCard
               title="Données Manquantes"
               value={incompleteYears}
-              description="Années à récupérer"
+              description={`En attente de ${loadingYears} / ${totalYears}`}
               icon={TrendingDown}
             />
           </div>
-          <CryptoHistoriesStatusTable
-            cryptos={cryptos}
-            isFetching={isFetching}
-          />
+          <CryptoHistoriesStatusTable />
         </CardContent>
       </Card>
     </TabsContent>

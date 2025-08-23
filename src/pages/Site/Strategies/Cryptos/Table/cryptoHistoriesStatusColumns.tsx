@@ -7,15 +7,19 @@ import { Separator } from "@/src/components/ui/separator";
 import { DataTableColumnHeader } from "@/src/components/ui/tools/dataTableColumnHeader";
 import { getCryptoHistoryCompleteness } from "@/src/utils/getCryptoHistoryCompleteness";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
 
 import { CryptoHistoriesStatusActions } from "./CryptoHistoriesStatusActions";
 
 const multiColumnFilter: FilterFn<any> = (row, columnId, filterValue) => {
   const name = row.getValue("name") as string;
+  const asset = row.getValue("asset") as string;
   const searchText = filterValue.toLowerCase();
 
-  return name?.toLowerCase().includes(searchText);
+  return (
+    name?.toLowerCase().includes(searchText) ||
+    asset?.toLowerCase().includes(searchText)
+  );
 };
 
 export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
@@ -94,15 +98,19 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
           {datas.history_completeness &&
             Object.entries(datas.history_completeness)
               .slice(-7)
-              .map(([year, is_complete], index) => (
+              .map(([year, status], index) => (
                 <Fragment key={year}>
-                  {index !== 0 && <Separator orientation="vertical" className="h-10" />}
+                  {index !== 0 && (
+                    <Separator orientation="vertical" className="h-10" />
+                  )}
                   <div className="flex items-center flex-col gap-1">
                     <h2 className="text-sm font-bold">{year}</h2>
-                    {is_complete ? (
+                    {status === "complete" ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
+                    ) : status === "not_requested" ? (
                       <XCircle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
                     )}
                   </div>
                 </Fragment>
@@ -113,6 +121,12 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
     enableHiding: false,
     enableSorting: false,
   },
+
+  column.createHiddenColumn({
+    id: "asset",
+    accessorKey: "asset",
+    title: t("asset"),
+  }),
 
   {
     id: "actions",
