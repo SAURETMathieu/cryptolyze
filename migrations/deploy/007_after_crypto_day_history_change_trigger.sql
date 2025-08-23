@@ -14,25 +14,25 @@ DECLARE
 BEGIN
     CASE TG_OP
         WHEN 'INSERT' THEN
-            payload = json_build_object(
+            payload := json_build_object(
                 'event_type', 'INSERT',
                 'table', TG_TABLE_NAME,
-                'record', row_to_json(NEW),
+                'record', to_jsonb(NEW) - 'prices_per_minute',
                 'timestamp', now()
             );
         WHEN 'UPDATE' THEN
-            payload = json_build_object(
+            payload := json_build_object(
                 'event_type', 'UPDATE',
                 'table', TG_TABLE_NAME,
-                'new_record', row_to_json(NEW),
-                'old_record', row_to_json(OLD),
+                'new_record', to_jsonb(NEW) - 'prices_per_minute',
+                'old_record', to_jsonb(OLD) - 'prices_per_minute',
                 'timestamp', now()
             );
         WHEN 'DELETE' THEN
-            payload = json_build_object(
+            payload := json_build_object(
                 'event_type', 'DELETE',
                 'table', TG_TABLE_NAME,
-                'record', row_to_json(OLD),
+                'record', to_jsonb(OLD) - 'prices_per_minute',
                 'timestamp', now()
             );
     END CASE;

@@ -77,9 +77,7 @@ CREATE TABLE public.crypto_day_history (
     CONSTRAINT "crypto_day_history_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "crypto_day_history_crypto_id_fkey" FOREIGN KEY ("crypto_id") REFERENCES "public"."crypto"("id"),
     CONSTRAINT "unique_crypto_day_history_date_crypto_id" UNIQUE ("date", "crypto_id"),
-    CONSTRAINT "crypto_day_history_min_price_check" CHECK ("min_price" <= "max_price"),
-    CONSTRAINT "crypto_day_history_prices_per_minute_check" CHECK (prices_per_minute IS NULL
-    OR array_length(prices_per_minute, 1) = 1440)
+    CONSTRAINT "crypto_day_history_min_price_check" CHECK ("min_price" <= "max_price")
 );
 
 ALTER TABLE public.crypto_day_history ENABLE ROW LEVEL SECURITY;
