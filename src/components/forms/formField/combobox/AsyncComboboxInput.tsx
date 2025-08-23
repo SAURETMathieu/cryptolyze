@@ -26,7 +26,7 @@ interface Identifiable {
   [key: string]: any;
 }
 
-type CustomerInputProps<T extends Identifiable> = {
+interface AsyncComboboxInputProps<T extends Identifiable> {
   form: any;
   name: string;
   inputClassName?: string;
@@ -34,7 +34,10 @@ type CustomerInputProps<T extends Identifiable> = {
   containerClassName?: string;
   label: string;
   placeholder?: string;
-  fetchResults: (query: string) => Promise<FetchResultsResponse<T[]>>;
+  fetchResults: (
+    query: string,
+    signal?: AbortSignal
+  ) => Promise<FetchResultsResponse<T[]>>;
   renderItem: (item: T) => JSX.Element;
   skeletonItems?: JSX.Element;
   AddButton?: JSX.Element;
@@ -44,9 +47,12 @@ type CustomerInputProps<T extends Identifiable> = {
   handleChange?: (item: T) => void;
   compareFn?: (a: T, b: T) => boolean;
   defaultSelected?: T;
-  defaultFetch?: (query?: string) => Promise<FetchResultsResponse<T[]>>;
+  defaultFetch?: (
+    query?: string,
+    signal?: AbortSignal
+  ) => Promise<FetchResultsResponse<T[]>>;
   variableToStore?: string;
-};
+}
 
 export function AsyncComboboxInput<T extends Identifiable>({
   form,
@@ -68,7 +74,7 @@ export function AsyncComboboxInput<T extends Identifiable>({
   defaultSelected = undefined,
   defaultFetch,
   variableToStore = "id",
-}: CustomerInputProps<T>) {
+}: AsyncComboboxInputProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<T | undefined>(defaultSelected);
   const [searchQuery, setSearchQuery] = useState("");

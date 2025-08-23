@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from "react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { XIcon } from "lucide-react";
+import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 
 import {
@@ -21,13 +22,16 @@ export type FetchResultsResponse<T> = {
 };
 
 interface SearchProps<T> {
-  fetchResults: (query: string) => Promise<FetchResultsResponse<T[]>>;
-  renderItem: (item: T) => JSX.Element;
+  fetchResults: (
+    query: string,
+    signal?: AbortSignal
+  ) => Promise<FetchResultsResponse<T[]>>;
+  renderItem: (item: T) => React.ReactNode;
   selectedResult?: T;
-  onSelectResult: (item: T) => void;
+  onSelectResult: (result: T) => void;
   placeholder?: string;
-  compareFn: (a: T, b: T) => boolean;
   skeletonItems?: JSX.Element;
+  compareFn: (a: T, b: T) => boolean;
 }
 
 export function Search<T extends { id: string | number }>({
@@ -51,22 +55,44 @@ export function Search<T extends { id: string | number }>({
       return;
     }
 
+    const abortController = new AbortController();
+
     const fetchData = async () => {
       setIsLoading(true);
       setIsError(false);
 
       try {
-        const { data, success, message } =
-          await fetchResults(debouncedSearchQuery);
-        setData(data);
-      } catch (error) {
+        const { data, success, message } = await fetchResults(
+          debouncedSearchQuery,
+          abortController.signal
+        );
+
+        if (!success) {
+          throw new Error(message);
+        }
+
+        if (!abortController.signal.aborted) {
+          setData(data);
+        }
+      } catch (error: any) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        console.error("Erreur de requête:", error);
+        toast.error(error.message);
         setIsError(true);
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      abortController.abort();
+    };
   }, [debouncedSearchQuery, fetchResults]);
 
   const enabled = !!debouncedSearchQuery;

@@ -5,6 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import InfiniteScroll from "@/src/components/ui/infinite-scroll";
 import { cn } from "@/src/lib/utils";
 import { CheckIcon, Loader, XIcon } from "lucide-react";
+import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 
 import {
@@ -26,7 +27,10 @@ interface Identifiable {
 interface DynamicSearchProps<T extends Identifiable> {
   form: any;
   name: string;
-  fetchResults: (query: string) => Promise<FetchResultsResponse<T[]>>;
+  fetchResults: (
+    query: string,
+    signal?: AbortSignal
+  ) => Promise<FetchResultsResponse<T[]>>;
   renderItem: (item: T) => React.ReactNode;
   skeletonItems?: JSX.Element;
   setSelected: Dispatch<SetStateAction<T | undefined>>;
@@ -84,22 +88,45 @@ export function DynamicSearchTemplate<T extends Identifiable>({
       return;
     }
 
+    const abortController = new AbortController();
+
     const fetchData = async () => {
       setIsLoading(true);
       setIsError(false);
       setDatas([]);
       setVisibleItems([]);
+
       try {
-        const { data, success, message } =
-          await fetchResults(debouncedSearchQuery);
-        setDatas(data);
-      } catch (error) {
+        const { data, success, message } = await fetchResults(
+          debouncedSearchQuery,
+          abortController.signal
+        );
+
+        if (!success) {
+          throw new Error(message);
+        }
+
+        if (!abortController.signal.aborted) {
+          setDatas(data);
+        }
+      } catch (error: any) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        console.error("Erreur de requête:", error);
+        toast.error(error.message);
         setIsError(true);
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
     fetchData();
+
+    return () => {
+      abortController.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
