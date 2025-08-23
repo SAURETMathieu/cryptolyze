@@ -44,7 +44,7 @@ export type DataTableProps<TData, TValue> = {
   columnConfigs?: ColumnConfig[];
   rowLink?: string | RowLink | ((row: any) => any) | undefined;
   onDeleteMultipleFunction?: (ids: string[] | number[]) => Promise<boolean>;
-  hideColumns?: VisibilityState;
+  showColumns?: VisibilityState;
   multipleSelectFunctions?: SelectFunction[];
   hideExport?: boolean;
   devEditOneRowFunction?: (row: any) => void;

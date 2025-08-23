@@ -11,7 +11,7 @@ const Table = <TData, TValue>({
   columnConfigs,
   rowLink,
   onDeleteMultipleFunction,
-  hideColumns,
+  showColumns,
   multipleSelectFunctions,
   hideExport,
   devEditAllRowsFunction,
@@ -35,7 +35,7 @@ const Table = <TData, TValue>({
         columnConfigs={columnConfigs}
         rowLink={rowLink}
         onDeleteMultipleFunction={onDeleteMultipleFunction}
-        hideColumns={hideColumns}
+        showColumns={showColumns}
         multipleSelectFunctions={multipleSelectFunctions}
         hideExport={hideExport}
         devEditAllRowsFunction={devEditAllRowsFunction}

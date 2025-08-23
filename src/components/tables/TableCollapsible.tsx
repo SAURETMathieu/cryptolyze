@@ -13,7 +13,7 @@ const TableCollapsible = <TData, TValue>({
   onDeleteMultipleFunction,
   multipleSelectFunctions,
   renderCollapsibleContent,
-  hideColumns,
+  showColumns,
   hideExport,
   devEditAllRowsFunction,
   devEditOneRowFunction,
@@ -35,7 +35,7 @@ const TableCollapsible = <TData, TValue>({
         rowLink={rowLink}
         renderCollapsibleContent={renderCollapsibleContent}
         onDeleteMultipleFunction={onDeleteMultipleFunction}
-        hideColumns={hideColumns}
+        showColumns={showColumns}
         multipleSelectFunctions={multipleSelectFunctions}
         hideExport={hideExport}
         devEditAllRowsFunction={devEditAllRowsFunction}

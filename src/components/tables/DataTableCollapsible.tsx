@@ -45,7 +45,7 @@ export function DataTableCollapsible<TData, TValue>({
   columnConfigs,
   rowLink,
   renderCollapsibleContent,
-  hideColumns,
+  showColumns,
   onDeleteMultipleFunction,
   multipleSelectFunctions,
   hideExport,
@@ -76,7 +76,7 @@ export function DataTableCollapsible<TData, TValue>({
       payment_type: false,
       bic: false,
       devise: false,
-      ...hideColumns,
+      ...showColumns,
     });
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(

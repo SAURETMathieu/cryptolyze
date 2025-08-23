@@ -69,7 +69,7 @@ export function EmailsTable() {
         placeholder:
           tTable("filter") + " " + tTable("by") + " " + tTable("key"),
       }}
-      hideColumns={{ types: false }}
+      showColumns={{ types: false }}
       hideExport
     />
   );

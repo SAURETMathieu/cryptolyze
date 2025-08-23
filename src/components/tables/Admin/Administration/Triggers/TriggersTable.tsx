@@ -110,7 +110,7 @@ export default function TriggersTable() {
         id: "name",
         placeholder: tTable("name"),
       }}
-      hideColumns={{ types: false }}
+      showColumns={{ types: false }}
       hideExport
     />
   );

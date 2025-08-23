@@ -43,7 +43,7 @@ export function DataTable<TData, TValue>({
   rowLink,
   onDeleteMultipleFunction,
   multipleSelectFunctions,
-  hideColumns,
+  showColumns,
   hideExport,
   devEditAllRowsFunction,
   devEditOneRowFunction,
@@ -65,7 +65,7 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({
       sku: false,
       brand: false,
-      ...hideColumns,
+      ...showColumns,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
