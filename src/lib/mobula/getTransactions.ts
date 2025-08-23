@@ -43,14 +43,14 @@ export async function getAllTransactions(
     }
 
     const formattedData = data?.map((transaction: any) => {
-      const asset = transaction.asset ?? {};
+      const symbol = transaction.symbol ?? {};
       return {
         idx: transaction.hash,
-        tokenName: asset.name ?? null,
-        tokenSymbol: asset.symbol ?? null,
-        tokenLogo: asset.logo ?? "/empty-token.svg",
-        tokenDecimals: asset.decimals ?? 18,
-        tokenAddress: asset.contract ?? null,
+        tokenName: symbol.name ?? null,
+        tokenSymbol: symbol.symbol ?? null,
+        tokenLogo: symbol.logo ?? "/empty-token.svg",
+        tokenDecimals: symbol.decimals ?? 18,
+        tokenAddress: symbol.contract ?? null,
         fromAddress: transaction.from,
         toAddress: transaction.to,
         fromLabel: null,

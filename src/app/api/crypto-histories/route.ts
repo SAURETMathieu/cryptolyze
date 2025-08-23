@@ -8,7 +8,7 @@ export const GET = withApiHandler<any>(
     const { data, error } = await supabase
       .from("crypto_yearly_history_status")
       .select(`*`)
-      .order("asset", { ascending: false });
+      .order("symbol", { ascending: false });
 
     if (error) {
       throw new Error(error.message);

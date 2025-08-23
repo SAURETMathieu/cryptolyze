@@ -38,7 +38,7 @@ BEGIN
     ELSE
         -- Vérifier si l'année demandée est >= à first_year
         IF p_year < v_crypto_record.first_year THEN
-            RAISE EXCEPTION 'Year % is before first_year % for crypto %', p_year, v_crypto_record.first_year, v_crypto_record.asset;
+            RAISE EXCEPTION 'Year % is before first_year % for crypto %', p_year, v_crypto_record.first_year, v_crypto_record.symbol;
         END IF;
 
         v_start_year := p_year;

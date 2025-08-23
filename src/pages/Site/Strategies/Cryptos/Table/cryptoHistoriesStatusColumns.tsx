@@ -13,12 +13,12 @@ import { CryptoHistoriesStatusActions } from "./CryptoHistoriesStatusActions";
 
 const multiColumnFilter: FilterFn<any> = (row, columnId, filterValue) => {
   const name = row.getValue("name") as string;
-  const asset = row.getValue("asset") as string;
+  const symbol = row.getValue("symbol") as string;
   const searchText = filterValue.toLowerCase();
 
   return (
     name?.toLowerCase().includes(searchText) ||
-    asset?.toLowerCase().includes(searchText)
+    symbol?.toLowerCase().includes(searchText)
   );
 };
 
@@ -38,7 +38,7 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
   column.createNameAndSkuColumn({
     id: "name",
     accessorKey: "name",
-    skuAccessorKey: "asset",
+    skuAccessorKey: "symbol",
     title: t("name"),
     className: "max-w-[120px] md:max-w-[150px] lg:max-w-[200px]",
     enableSorting: true,
@@ -123,9 +123,9 @@ export const createColumns = (t: MessagesIntl): ColumnDef<any>[] => [
   },
 
   column.createHiddenColumn({
-    id: "asset",
-    accessorKey: "asset",
-    title: t("asset"),
+    id: "symbol",
+    accessorKey: "symbol",
+    title: t("symbol"),
   }),
 
   {

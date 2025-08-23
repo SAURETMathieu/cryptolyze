@@ -42,7 +42,7 @@ export async function getWalletsWithBalancesAndTransactions(
             *,
             crypto:crypto_id (
               id,
-              asset,
+              symbol,
               name,
               digit,
               logo_url,
@@ -81,7 +81,7 @@ export async function getWalletsWithBalancesAndTransactions(
 
           return {
             id: balance.wallet_id, // Utiliser wallet_id comme ID temporaire
-            asset: crypto?.asset || "",
+            symbol: crypto?.symbol || "",
             cryptoId: balance.crypto_id,
             cryptoName: crypto?.name || "",
             digit: crypto?.digit || 0,

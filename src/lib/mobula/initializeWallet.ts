@@ -44,14 +44,14 @@ export async function createWalletWithBalancesAndTransactions(
         crypto = await supabase
           .from("crypto")
           .select()
-          .eq("asset", tokenBalance.symbol)
+          .eq("symbol", tokenBalance.symbol)
           .single();
 
         if (!crypto) {
           crypto = await supabase
             .from("crypto")
             .insert({
-              asset: tokenBalance.symbol,
+              symbol: tokenBalance.symbol,
               name: tokenBalance.name,
               digit: tokenBalance.decimals,
               logo_url: tokenBalance.logo,
@@ -90,14 +90,14 @@ export async function createWalletWithBalancesAndTransactions(
         crypto = await supabase
           .from("crypto")
           .select()
-          .eq("asset", transaction.tokenSymbol)
+          .eq("symbol", transaction.tokenSymbol)
           .single();
 
         if (!crypto) {
           crypto = await supabase
             .from("crypto")
             .insert({
-              asset: transaction.tokenSymbol,
+              symbol: transaction.tokenSymbol,
               name: transaction.tokenName,
               digit: transaction.tokenDecimals,
               logo_url: transaction.tokenLogo,

@@ -6,17 +6,17 @@ export const aggregateBalances = (wallets:any[]) => {
 
   wallets?.forEach((wallet: any) => {
     wallet.balances?.forEach((balance: any) => {
-      const { asset, nbToken, price } = balance;
-      if (balanceMap.has(asset)) {
-        balanceMap.set(asset, balanceMap.get(asset) + nbToken * price);
+      const { symbol, nbToken, price } = balance;
+      if (balanceMap.has(symbol)) {
+        balanceMap.set(symbol, balanceMap.get(symbol) + nbToken * price);
       } else {
-        balanceMap.set(asset, nbToken * price);
+        balanceMap.set(symbol, nbToken * price);
       }
     });
   });
 
-  const datas = Array.from(balanceMap).map(([asset, value]) => ({
-    name: asset,
+  const datas = Array.from(balanceMap).map(([symbol, value]) => ({
+    name: symbol,
     value: parseFloat(value.toFixed(2)),
   }));
 

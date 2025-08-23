@@ -219,7 +219,6 @@ export type Database = {
       }
       crypto: {
         Row: {
-          asset: string
           created_at: string
           currency: string
           digit: number
@@ -227,10 +226,10 @@ export type Database = {
           id: number
           logo_url: string
           name: string
+          symbol: string
           updated_at: string | null
         }
         Insert: {
-          asset: string
           created_at?: string
           currency?: string
           digit: number
@@ -238,10 +237,10 @@ export type Database = {
           id?: number
           logo_url: string
           name: string
+          symbol: string
           updated_at?: string | null
         }
         Update: {
-          asset?: string
           created_at?: string
           currency?: string
           digit?: number
@@ -249,6 +248,7 @@ export type Database = {
           id?: number
           logo_url?: string
           name?: string
+          symbol?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -803,7 +803,6 @@ export type Database = {
     Views: {
       crypto_yearly_history_status: {
         Row: {
-          asset: string | null
           complete_years: number | null
           created_at: string | null
           currency: string | null
@@ -814,6 +813,7 @@ export type Database = {
           incomplete_years: number | null
           logo_url: string | null
           name: string | null
+          symbol: string | null
           updated_at: string | null
         }
         Relationships: []

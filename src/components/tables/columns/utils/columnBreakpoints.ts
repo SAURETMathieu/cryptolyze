@@ -23,7 +23,7 @@ export const columnBreakpoints: ColumnBreakpoints = {
   close_date: "xxl",
   opened: "xxl",
   closed: "xxl",
-  asset: "xl",
+  symbol: "xl",
   strategy: "md",
   balance: "md",
 };

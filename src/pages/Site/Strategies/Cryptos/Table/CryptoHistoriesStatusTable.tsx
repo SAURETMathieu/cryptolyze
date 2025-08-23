@@ -49,9 +49,9 @@ export function CryptoHistoriesStatusTable() {
           // columnConfigs={columnConfigs}
           filterTextOptions={{
             id: "name",
-            placeholder: tTable("name") + " " + tTable("asset"),
+            placeholder: tTable("name") + " " + tTable("symbol"),
           }}
-          showColumns={{ asset: false }}
+          showColumns={{ symbol: false }}
           hideExport
         />
       </CardContent>

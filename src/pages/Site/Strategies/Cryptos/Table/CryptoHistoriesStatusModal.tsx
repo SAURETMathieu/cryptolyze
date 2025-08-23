@@ -162,7 +162,7 @@ export function CryptoHistoriesStatusModal({
         />
         <div>
           <h3 className="font-semibold">{currentCrypto.name}</h3>
-          <p className="text-sm text-muted-foreground">{currentCrypto.asset}</p>
+          <p className="text-sm text-muted-foreground">{currentCrypto.symbol}</p>
         </div>
       </div>
 

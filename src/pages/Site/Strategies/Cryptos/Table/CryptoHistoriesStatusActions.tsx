@@ -19,7 +19,7 @@ export function CryptoHistoriesStatusActions<TData>({
   const { openModal, setDescription, setTitle } = useModal();
 
   const handleOpenModal = () => {
-    setTitle(`Historique complet - ${crypto.name} (${crypto.asset})`);
+    setTitle(`Historique complet - ${crypto.name} (${crypto.symbol})`);
     setDescription(`Gestion des données historiques par année`);
     openModal(<CryptoHistoriesStatusModal crypto={crypto} />);
   };
