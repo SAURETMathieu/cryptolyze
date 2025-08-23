@@ -23,7 +23,7 @@ export function CryptoHistoriesStatusModal({
       const endDate = `${year}-12-31`;
 
       const response = await fetch(
-        `/api/crypto-history?crypto=${crypto.asset}&interval=1m&startDate=${startDate}&endDate=${endDate}`
+        `/api/crypto-history-request?crypto=${crypto.asset}&interval=1m&startDate=${startDate}&endDate=${endDate}`
       );
 
       const result = await response.json();
@@ -69,7 +69,7 @@ export function CryptoHistoriesStatusModal({
           const endDate = `${year}-12-31`;
 
           const response = await fetch(
-            `/api/crypto-history?crypto=${crypto.asset}&interval=1d&startDate=${startDate}&endDate=${endDate}`
+            `/api/crypto-history-request?crypto=${crypto.asset}&interval=1m&startDate=${startDate}&endDate=${endDate}`
           );
 
           const result = await response.json();

@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { TabsContent } from "@/src/components/ui/tabs";
-import { getCryptoHistoryCompleteness } from "@/src/utils/getCryptoHistoryCompleteness";
 import { Database, LucideIcon, TrendingDown, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,21 +39,20 @@ export function CryptoTabsContent() {
   const [cryptos, setCryptos] = useState<any[]>([]);
 
   const totalCryptos = cryptos.length;
-  const completeCryptos = cryptos.reduce(
-    (acc, crypto) =>
-      acc + getCryptoHistoryCompleteness(crypto.history_completeness),
-    0
-  );
-  const incompleteCryptos = cryptos.reduce(
-    (acc, crypto) =>
-      acc + !getCryptoHistoryCompleteness(crypto.history_completeness),
+  const totalYears = cryptos.reduce(
+    (acc, crypto) => acc + Object.keys(crypto.history_completeness).length,
     0
   );
 
-  const completePercentage = Math.round((completeCryptos / totalCryptos) * 100);
-  const incompletePercentage = Math.round(
-    (incompleteCryptos / totalCryptos) * 100
+  const completeYears = cryptos.reduce(
+    (acc, crypto) =>
+      acc + Object.values(crypto.history_completeness).filter(Boolean).length,
+    0
   );
+
+  const incompleteYears = totalYears - completeYears;
+
+  const completePercentage = Math.round((completeYears / totalYears) * 100);
 
   useEffect(() => {
     const fetchCryptos = async () => {
@@ -101,7 +99,7 @@ export function CryptoTabsContent() {
             />
             <StatsCard
               title="Données Manquantes"
-              value={incompletePercentage}
+              value={incompleteYears}
               description="Années à récupérer"
               icon={TrendingDown}
             />
