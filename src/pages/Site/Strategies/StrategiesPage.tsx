@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { StrategyTable } from "@/src/components/strategies/StrategyTable";
 import {
   Card,
   CardContent,
@@ -15,6 +14,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
+import { StrategiesTable } from "@/src/modules/strategies/table/StrategiesTable";
 
 import { CryptoTabsContent } from "./Cryptos/CryptoTabsContent";
 
@@ -64,7 +64,7 @@ export function StrategiesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <StrategyTable
+                <StrategiesTable
                   onStrategySelect={handleStrategySelect}
                   onCryptoSelect={handleCryptoSelect}
                 />

@@ -20,9 +20,6 @@ export const authentificationRoutes = [
   "/inscription",
   "/forgot-password",
   "/mot-de-passe-oublie",
-  "/wallets",
-  "/cryptos",
-  "/bots",
 ];
 
 // should be connected to access
@@ -33,13 +30,14 @@ export const privateRoutes = [
   "/settings",
   "/parametres",
   "/reset-password",
+  "/wallets",
+  "/cryptos",
+  "/bots",
 ];
 
 export const apiAuthPrefix = "/api/auth";
 
 // api routes
-export const apiRoutes = [
-  "/api/*",
-];
+export const apiRoutes = ["/api/*"];
 
 export const DEFAULT_LOGIN_REDIRECT = "/";

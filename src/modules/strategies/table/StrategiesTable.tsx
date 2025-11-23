@@ -3,23 +3,25 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { ColumnDef } from "@tanstack/react-table";
-import { Eye, Play, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { DataTable } from "../tables/DataTable";
+import { DataTable } from "../../../components/tables/DataTable";
+import { createColumns } from "./strategiesColumns";
 
 interface StrategyTableProps {
   onStrategySelect: (strategyId: number) => void;
   onCryptoSelect: (cryptoId: number) => void;
 }
 
-export function StrategyTable({
+export function StrategiesTable({
   onStrategySelect,
   onCryptoSelect,
 }: StrategyTableProps) {
   const [strategies, setStrategies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const tTable = useTranslations("Tables");
 
   useEffect(() => {
     loadStrategies();
@@ -42,61 +44,6 @@ export function StrategyTable({
       setLoading(false);
     }
   };
-
-  const strategyColumns: ColumnDef<any>[] = [
-    {
-      accessorKey: "name",
-      header: "Nom",
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-    },
-    {
-      accessorKey: "execution_delay",
-      header: "Délai (s)",
-      cell: ({ row }) => `${row.original.execution_delay}s`,
-    },
-    {
-      accessorKey: "percent_per_trade_up",
-      header: "% Hausse",
-      cell: ({ row }) => `${row.original.percent_per_trade_up}%`,
-    },
-    {
-      accessorKey: "percent_per_trade_down",
-      header: "% Baisse",
-      cell: ({ row }) => `${row.original.percent_per_trade_down}%`,
-    },
-    {
-      accessorKey: "multiplier",
-      header: "Multiplicateur",
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onStrategySelect(row.original.id)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              // Ouvrir modal pour générer un test
-              toast.info("Fonctionnalité à implémenter");
-            }}
-          >
-            <Play className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   if (loading) {
     return (
@@ -140,7 +87,7 @@ export function StrategyTable({
         </Card>
       ) : (
         <DataTable
-          columns={strategyColumns}
+          columns={createColumns(tTable)}
           data={strategies}
           hideExport={false}
         />
