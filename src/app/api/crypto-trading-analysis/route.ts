@@ -457,7 +457,7 @@ async function analyzeStrategy(
     ...Array.from(dailyStats.values()).map((s: DailyStats) => s.max_trade_open),
     0
   );
-  const averageSimultaneousTrades = Math.round(
+  const averageSimultaneousTrades = Math.ceil(
     dailyStats.size > 0
       ? Array.from(dailyStats.values()).reduce(
           (sum: number, s: DailyStats) =>
@@ -717,7 +717,7 @@ async function analyzeStrategy(
         date: stats.date,
         nb_token: stats.nb_token,
         max_trade_open: stats.max_trade_open,
-        average_trade_open: Math.round(
+        average_trade_open: Math.ceil(
           stats.count_minutes > 0
             ? stats.total_trade_open / stats.count_minutes
             : 0
