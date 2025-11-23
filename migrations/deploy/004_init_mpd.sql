@@ -224,7 +224,7 @@ CREATE OR REPLACE TRIGGER "handle_strategy_test_updated_at" BEFORE UPDATE ON "pu
 -- Create strategy_test_history table
 --------------------------------------------------------
 CREATE TABLE public.strategy_test_history (
-    "strategy_test_id" integer NOT NULL REFERENCES strategy_test (id),
+    "strategy_test_id" integer NOT NULL REFERENCES strategy_test (id) ON DELETE CASCADE,
     "date" date NOT NULL,
     "nb_token" numeric NOT NULL,
     "max_trade_open" INTEGER NOT NULL DEFAULT 0,

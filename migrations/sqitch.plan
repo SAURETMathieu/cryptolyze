@@ -8,3 +8,4 @@
 005_view_crypto_yearly_history_status 2025-08-17T13:27:52Z SAURET,,, <sauret@sauret-MS-7885> # view to get crypto with year history status
 006_request_crypto_day_history_function 2025-08-23T16:53:52Z SAURET,,, <sauret@sauret-MS-7885> # function to request crypto_day_history
 007_after_crypto_day_history_change_trigger 2025-08-23T18:41:49Z SAURET,,, <sauret@sauret-MS-7885> # trigger + function to pg notify crypto_day_history table changes
+008_fix_strategy_test_unique_constraint 2025-11-23T00:00:00Z SAURET,,, <sauret@sauret-MS-7885> # fix unique constraint to include strategy_id

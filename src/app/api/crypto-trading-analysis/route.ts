@@ -1,6 +1,5 @@
-import { readdir, readFile } from "fs/promises";
-import { join } from "path";
 import { NextRequest, NextResponse } from "next/server";
+import { createServer } from "@/src/lib/supabase/server";
 
 // Types pour les paramètres de requête
 interface TradingAnalysisParams {
@@ -17,68 +16,60 @@ interface Trade {
   profit?: number;
   fees: number;
   amount: number;
-  threshold?: number;
+  tradeAmount: number; // Montant investi dans ce trade (avec multiplicateur)
+  buyTimestamp?: number; // Index dans le tableau de prix
+  sellTimestamp?: number; // Index dans le tableau de prix
 }
 
-// Types pour les résultats d'analyse par seuil
-interface ThresholdAnalysis {
-  threshold: number;
-  totalTrades: number;
-  closedTrades: number;
-  openTrades: number;
-  realizedProfit: number;
-  unrealizedProfit: number;
-  totalProfit: number;
-  totalFees: number;
-  dropCount: number;
-  maxSimultaneousTrades: number;
-  averageSimultaneousTrades: number;
-  simultaneousTradesDistribution?: {
-    count: number;
-    frequency: number;
-    percentage: number;
+// Types pour les données de prix avec date
+interface PriceData {
+  price: number;
+  date: string; // Date du jour
+  minuteIndex: number; // Index dans la journée (0-1439)
+}
+
+// Types pour les résultats d'analyse d'une stratégie
+interface StrategyAnalysisResult {
+  strategy_id: number;
+  crypto_id: number;
+  year: number;
+  starting_price: number;
+  ending_price: number;
+  average_price: number;
+  percent: number;
+  max_trade_open: number;
+  average_trade_open: number;
+  max_invest: number;
+  nb_token: number;
+  fees: number;
+  nb_trade_closed: number;
+  nb_trade_open: number;
+  profit: number;
+  profit_percent: number;
+  dailyHistory: {
+    date: string;
+    nb_token: number;
+    max_trade_open: number;
+    average_trade_open: number;
+    average_price: number;
+    max_invest: number;
+    nb_trade_closed: number;
+    nb_trade_open: number;
+    profit: number;
+    profit_percent: number;
   }[];
-  profitPercentage: number;
-  betOptimization: {
-    recommendedBetMultiplier: number;
-    highActivityThreshold: number;
-    lowActivityThreshold: number;
-    explanation: string;
-    // activityRanges?: {
-    //   range: string;
-    //   percentage: number;
-    //   recommendedMultiplier: number;
-    //   explanation: string;
-    // }[];
-  };
-  trades?: Trade[];
 }
 
-// Types pour les résultats d'analyse
-interface TradingAnalysisResult {
+// Types pour la réponse finale
+interface TradingAnalysisResponse {
   crypto: string;
-  year: string;
-  maxTrades: number;
-  remainingTrades: number;
-  overallStats: {
-    totalTrades: number;
-    closedTrades: number;
-    openTrades: number;
-    totalProfit: number;
-    totalFees: number;
-    realizedProfit: number;
-    unrealizedProfit: number;
-    maxSimultaneousTrades: number;
-  };
-  thresholdAnalyses: ThresholdAnalysis[];
+  year: number;
+  results: StrategyAnalysisResult[];
 }
-
-// Seuils de chute à analyser
-const DROP_THRESHOLDS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 7.5, 10];
 
 // Configuration des frais
 const TRADING_FEES = 0.00075; // 0.075%
-const TRADE_AMOUNT = 20; // 20 dollars par trade
+const TRADE_AMOUNT = 20; // 20 dollars par trade de base
 
 // Fonction pour valider les paramètres
 function validateParams(params: TradingAnalysisParams): {
@@ -104,62 +95,117 @@ function validateParams(params: TradingAnalysisParams): {
   return { isValid: true };
 }
 
-// Fonction pour récupérer les données depuis le dossier data
-async function fetchCryptoData(crypto: string, year: string) {
-  const dataDir = join(process.cwd(), "data");
+// Fonction pour récupérer les données depuis la base de données
+async function fetchCryptoData(
+  crypto: string,
+  year: string,
+  cryptoId: number
+): Promise<PriceData[]> {
+  const supabase = createServer();
 
   try {
-    // Lister tous les fichiers dans le dossier data
-    const files = await readdir(dataDir);
+    // Récupérer toutes les entrées de crypto_day_history pour cette crypto et cette année
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
 
-    // Chercher le fichier correspondant à la crypto et l'année
-    const targetFile = files.find((file) =>
-      file.startsWith(`${crypto}_1m_${year}-01-01_${year}-12-31.json`)
-    );
+    const { data: historyData, error: historyError } = await supabase
+      .from("crypto_day_history")
+      .select("prices_per_minute, date")
+      .eq("crypto_id", cryptoId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true })
+      .not("prices_per_minute", "is", null);
 
-    if (!targetFile) {
+    if (historyError) {
       throw new Error(
-        `Aucun fichier trouvé pour ${crypto} en ${year}. Veuillez d'abord récupérer les données avec l'API crypto-history.`
+        `Erreur lors de la récupération des données historiques: ${historyError.message}`
       );
     }
 
-    // Lire le fichier
-    const filePath = join(dataDir, targetFile);
-    const fileContent = await readFile(filePath, "utf-8");
-    const { data } = JSON.parse(fileContent);
+    if (!historyData || historyData.length === 0) {
+      throw new Error(
+        `Aucune donnée trouvée pour ${crypto} en ${year}. Veuillez d'abord récupérer les données avec l'API crypto-history-request.`
+      );
+    }
 
-    return data;
+    // 3. Construire un tableau de prix avec date et index
+    const prices: PriceData[] = [];
+    for (const dayData of historyData) {
+      if (
+        dayData.prices_per_minute &&
+        Array.isArray(dayData.prices_per_minute)
+      ) {
+        // Convertir les valeurs en nombres
+        const dayPrices = dayData.prices_per_minute.map((price: any) =>
+          typeof price === "string" ? parseFloat(price) : price
+        );
+
+        // Ajouter chaque prix avec sa date et son index dans la journée
+        dayPrices.forEach((price: number, minuteIndex: number) => {
+          prices.push({
+            price,
+            date: dayData.date,
+            minuteIndex,
+          });
+        });
+      }
+    }
+
+    if (prices.length === 0) {
+      throw new Error(
+        `Aucun prix trouvé pour ${crypto} en ${year}. Les données peuvent être incomplètes.`
+      );
+    }
+
+    return prices;
   } catch (error) {
-    throw new Error(`Erreur lors de la lecture des données: ${error}`);
+    throw new Error(
+      `Erreur lors de la récupération des données: ${error instanceof Error ? error.message : "Erreur inconnue"}`
+    );
   }
 }
 
-// Fonction pour analyser les trades pour un seuil de chute donné
-function analyzeTradesForThreshold(
-  prices: any[],
-  threshold: number
+// Fonction pour analyser les trades avec une stratégie
+function analyzeTradesWithStrategy(
+  prices: PriceData[],
+  dropThreshold: number,
+  upThreshold: number,
+  startingMultiplier: number,
+  multiplier: number
 ): {
   trades: Trade[];
-  dropCount: number;
-  maxSimultaneousTrades: number;
-  averageSimultaneousTrades: number;
-  simultaneousTradesDistribution: {
-    count: number;
-    frequency: number;
-    percentage: number;
-  }[];
+  dailyStats: Map<string, DailyStats>;
 } {
   const trades: Trade[] = [];
   let tradeId = 1;
   let highestPrice = 0;
-  let activeTrades: Trade[] = []; // Liste des trades actifs
-  let dropCount = 0;
-  let maxSimultaneousTrades = 0;
-  let totalSimultaneousTrades = 0;
-  let simultaneousTradesCounts: { [key: number]: number } = {};
+  let activeTrades: Trade[] = [];
+  const dailyStats = new Map<string, DailyStats>();
+
+  // Initialiser les stats par jour
+  prices.forEach((priceData) => {
+    if (!dailyStats.has(priceData.date)) {
+      dailyStats.set(priceData.date, {
+        date: priceData.date,
+        nb_token: 0,
+        max_trade_open: 0,
+        total_trade_open: 0,
+        count_minutes: 0,
+        total_invest: 0,
+        max_invest: 0,
+        nb_trade_closed: 0,
+        nb_trade_open: 0,
+        total_profit: 0,
+        total_fees: 0,
+      });
+    }
+  });
 
   for (let i = 0; i < prices.length; i++) {
-    const price = prices[i];
+    const priceData = prices[i];
+    const price = priceData.price;
+    const currentDate = priceData.date;
 
     // Mettre à jour le prix le plus haut si nécessaire
     if (price > highestPrice) {
@@ -171,10 +217,10 @@ function analyzeTradesForThreshold(
     const remainingActiveTrades: Trade[] = [];
 
     for (const trade of activeTrades) {
-      const requiredSellPrice = trade.buyPrice * (1 + threshold / 100);
+      const requiredSellPrice = trade.buyPrice * (1 + upThreshold / 100);
       if (price >= requiredSellPrice) {
         // Vendre le trade
-        const sellFees = TRADE_AMOUNT * TRADING_FEES; // Frais sur le montant du trade
+        const sellFees = trade.tradeAmount * TRADING_FEES;
         const profit =
           trade.amount * (price - trade.buyPrice) - trade.fees - sellFees;
 
@@ -182,7 +228,20 @@ function analyzeTradesForThreshold(
         trade.status = "closed";
         trade.profit = profit;
         trade.fees += sellFees;
+        trade.sellTimestamp = i;
         tradesToClose.push(trade);
+
+        // Mettre à jour les stats du jour
+        const dayStats = dailyStats.get(
+          trade.buyTimestamp !== undefined
+            ? prices[trade.buyTimestamp].date
+            : currentDate
+        )!;
+        if (dayStats) {
+          dayStats.nb_trade_closed++;
+          dayStats.total_profit += profit;
+          dayStats.total_fees += sellFees;
+        }
       } else {
         remainingActiveTrades.push(trade);
       }
@@ -192,342 +251,638 @@ function analyzeTradesForThreshold(
     trades.push(...tradesToClose);
     activeTrades = remainingActiveTrades;
 
-    // Compter les trades simultanés actuels
-    const currentSimultaneousTrades = activeTrades.length;
-    totalSimultaneousTrades += currentSimultaneousTrades;
-    simultaneousTradesCounts[currentSimultaneousTrades] =
-      (simultaneousTradesCounts[currentSimultaneousTrades] || 0) + 1;
-
-    // Mettre à jour le nombre maximum de trades simultanés
-    maxSimultaneousTrades = Math.max(
-      maxSimultaneousTrades,
-      currentSimultaneousTrades
-    );
-
     // Détecter une chute par rapport au prix le plus haut
     if (highestPrice > 0) {
       const dropPercentage = ((highestPrice - price) / highestPrice) * 100;
 
-      if (dropPercentage >= threshold) {
+      if (dropPercentage >= dropThreshold) {
+        // Calculer le montant du trade avec multiplicateur régressif
+        // Le multiplicateur diminue avec le nombre de trades actifs
+        const currentMultiplier =
+          startingMultiplier * Math.pow(multiplier, activeTrades.length);
+        const tradeAmount = TRADE_AMOUNT * currentMultiplier;
+
         // Détecter un achat - créer un nouveau trade
-        const buyFees = TRADE_AMOUNT * TRADING_FEES; // Frais sur le montant du trade
+        const buyFees = tradeAmount * TRADING_FEES;
         const newTrade: Trade = {
           id: tradeId++,
           buyPrice: price,
           status: "open",
           fees: buyFees,
-          amount: TRADE_AMOUNT / price,
-          threshold,
+          amount: tradeAmount / price,
+          tradeAmount,
+          buyTimestamp: i,
         };
 
         activeTrades.push(newTrade);
-        dropCount++;
 
         // Mettre à jour le prix le plus haut pour le prochain trade
         highestPrice = price;
       }
+    }
+
+    // Mettre à jour les stats du jour
+    const dayStats = dailyStats.get(currentDate)!;
+    if (dayStats) {
+      dayStats.nb_trade_open = activeTrades.length;
+      dayStats.max_trade_open = Math.max(
+        dayStats.max_trade_open,
+        activeTrades.length
+      );
+      dayStats.total_trade_open += activeTrades.length;
+      dayStats.count_minutes++;
+
+      // Calculer l'investissement total actuel
+      const currentInvest = activeTrades.reduce(
+        (sum, trade) => sum + trade.tradeAmount,
+        0
+      );
+      dayStats.total_invest += currentInvest;
+      dayStats.max_invest = Math.max(dayStats.max_invest, currentInvest);
+
+      // Calculer le nombre de tokens
+      const currentTokens = activeTrades.reduce(
+        (sum, trade) => sum + trade.amount,
+        0
+      );
+      dayStats.nb_token = currentTokens;
     }
   }
 
   // Ajouter tous les trades actifs restants
   trades.push(...activeTrades);
 
-  // Calculer la moyenne des trades simultanés
-  const averageSimultaneousTrades =
-    prices.length > 0 ? totalSimultaneousTrades / prices.length : 0;
-
-  // Créer la distribution des trades simultanés
-  const simultaneousTradesDistribution = Object.entries(
-    simultaneousTradesCounts
-  )
-    .map(([count, frequency]) => ({
-      count: parseInt(count),
-      frequency,
-      percentage: (frequency / prices.length) * 100,
-    }))
-    .sort((a, b) => a.count - b.count);
-
-  return {
-    trades,
-    dropCount,
-    maxSimultaneousTrades,
-    averageSimultaneousTrades,
-    simultaneousTradesDistribution,
-  };
+  return { trades, dailyStats };
 }
 
-// Fonction pour calculer les profits non réalisés
-function calculateUnrealizedProfit(
-  trades: Trade[],
-  currentPrice: number
-): number {
-  return trades
-    .filter((trade) => trade.status === "open")
-    .reduce((total, trade) => {
-      // Calculer la valeur actuelle du trade de 20$
-      const currentValue = trade.amount * (currentPrice - trade.buyPrice);
-      return total + currentValue;
-    }, 0);
+// Interface pour les stats quotidiennes
+interface DailyStats {
+  date: string;
+  nb_token: number;
+  max_trade_open: number;
+  total_trade_open: number;
+  count_minutes: number;
+  total_invest: number;
+  max_invest: number;
+  nb_trade_closed: number;
+  nb_trade_open: number;
+  total_profit: number;
+  total_fees: number;
 }
 
-// Fonction pour calculer les recommandations d'optimisation des mises
-function calculateBetOptimization(
-  distribution: { count: number; frequency: number; percentage: number }[]
-): {
-  recommendedBetMultiplier: number;
-  highActivityThreshold: number;
-  lowActivityThreshold: number;
-  explanation: string;
-  // activityRanges: {
-  //   range: string;
-  //   percentage: number;
-  //   recommendedMultiplier: number;
-  //   explanation: string;
-  // }[];
-} {
-  if (distribution.length === 0) {
-    return {
-      recommendedBetMultiplier: 1,
-      highActivityThreshold: 0,
-      lowActivityThreshold: 0,
-      explanation: "Distribution vide - Mises normales recommandées.",
-      // activityRanges: [],
-    };
+// Fonction pour analyser une stratégie spécifique
+async function analyzeStrategy(
+  strategy: any,
+  cryptoId: number,
+  year: number,
+  prices: PriceData[],
+  endingPrice: number
+): Promise<StrategyAnalysisResult> {
+  const supabase = createServer();
+
+  // Vérifier si un test existe déjà
+  console.log(
+    `🔍 Vérification du test existant pour stratégie ${strategy.id}, crypto ${cryptoId}, année ${year}...`
+  );
+  const { data: existingTest, error: testError } = await supabase
+    .from("strategy_test")
+    .select("*")
+    .eq("strategy_id", strategy.id)
+    .eq("crypto_id", cryptoId)
+    .eq("year", year)
+    .single();
+
+  if (testError) {
+    if (testError.code === "PGRST116") {
+      // PGRST116 = not found, ce qui est OK - on va calculer le test
+      console.log(
+        `ℹ️ Aucun test existant trouvé pour stratégie ${strategy.id}, calcul nécessaire`
+      );
+    } else {
+      console.error(`❌ Erreur lors de la vérification:`, testError);
+      throw new Error(
+        `Erreur lors de la vérification du test existant: ${testError.message} (code: ${testError.code})`
+      );
+    }
+  } else if (existingTest) {
+    console.log(`✅ Test existant trouvé avec l'ID: ${existingTest.id}`);
   }
 
-  // Normaliser les pourcentages pour garantir que la somme fait 100%
-  const totalPercentage = distribution.reduce(
-    (sum, d) => sum + d.percentage,
-    0
-  );
-  const normalizedDistribution = distribution.map((d) => ({
-    ...d,
-    normalizedPercentage: (d.percentage / totalPercentage) * 100,
-  }));
+  if (existingTest) {
+    // Récupérer l'historique quotidien
+    const { data: history, error: historyError } = await supabase
+      .from("strategy_test_history")
+      .select("*")
+      .eq("strategy_test_id", existingTest.id)
+      .order("date", { ascending: true });
 
-  const sorted = [...normalizedDistribution].sort((a, b) => a.count - b.count);
-
-  // Calcul cumulatif
-  let cumulative = 0;
-  const cumulativeDistribution = sorted.map((d) => {
-    cumulative += d.normalizedPercentage;
-    return { ...d, cumulative };
-  });
-
-  const activityRanges = cumulativeDistribution.map((d) => {
-    let recommendedMultiplier: number;
-    let explanation: string;
-
-    if (d.cumulative <= 60) {
-      recommendedMultiplier = 1;
-      explanation = "Activité normale";
-    } else if (d.cumulative <= 90) {
-      recommendedMultiplier = 1.25;
-      explanation = "Activité légèrement augmentée";
-    } else if (d.cumulative <= 97) {
-      recommendedMultiplier = 1.5;
-      explanation = "Activité rare";
-    } else {
-      recommendedMultiplier = 2;
-      explanation = "Activité très rare";
+    if (historyError) {
+      console.warn(
+        `Erreur lors de la récupération de l'historique pour stratégie ${strategy.id}: ${historyError.message}`
+      );
     }
 
     return {
-      range: `${d.count} trade${d.count > 1 ? "s" : ""}`,
-      percentage: d.normalizedPercentage,
-      recommendedMultiplier,
-      explanation,
+      strategy_id: existingTest.strategy_id,
+      crypto_id: existingTest.crypto_id,
+      year: existingTest.year,
+      starting_price: existingTest.starting_price,
+      ending_price: existingTest.ending_price,
+      average_price: existingTest.average_price,
+      percent: existingTest.percent,
+      max_trade_open: existingTest.max_trade_open,
+      average_trade_open: existingTest.average_trade_open,
+      max_invest: existingTest.max_invest,
+      nb_token: existingTest.nb_token,
+      fees: existingTest.fees,
+      nb_trade_closed: existingTest.nb_trade_closed,
+      nb_trade_open: existingTest.nb_trade_open,
+      profit: existingTest.profit,
+      profit_percent: existingTest.profit_percent,
+      dailyHistory:
+        history?.map((h) => ({
+          date: h.date,
+          nb_token: h.nb_token,
+          max_trade_open: h.max_trade_open,
+          average_trade_open: h.average_trade_open,
+          average_price: h.average_price,
+          max_invest: h.max_invest,
+          nb_trade_closed: h.nb_trade_closed,
+          nb_trade_open: h.nb_trade_open,
+          profit: h.profit,
+          profit_percent: h.profit_percent,
+        })) || [],
     };
-  });
+  }
 
-  // Calcul pondéré
-  const weightedMultiplier = activityRanges.reduce(
-    (acc, r) => acc + r.recommendedMultiplier * (r.percentage / 100),
+  // Le test n'existe pas, on doit le calculer
+  console.log(
+    `🚀 Calcul du test pour stratégie ${strategy.id} (${strategy.name})`
+  );
+
+  const startingPrice = prices[0].price;
+  const averagePrice =
+    prices.reduce((sum, p) => sum + p.price, 0) / prices.length;
+  const percent = ((endingPrice - startingPrice) / startingPrice) * 100;
+
+  // Analyser les trades avec la stratégie
+  const { trades, dailyStats } = analyzeTradesWithStrategy(
+    prices,
+    strategy.percent_per_trade_down,
+    strategy.percent_per_trade_up,
+    strategy.starting_multiplier,
+    strategy.multiplier
+  );
+
+  const closedTrades = trades.filter(
+    (trade: Trade) => trade.status === "closed"
+  );
+  const openTrades = trades.filter((trade: Trade) => trade.status === "open");
+
+  const realizedProfit = closedTrades.reduce(
+    (sum: number, trade: Trade) => sum + (trade.profit || 0),
+    0
+  );
+  const totalFees = trades.reduce(
+    (sum: number, trade: Trade) => sum + trade.fees,
+    0
+  );
+  const unrealizedProfit = openTrades.reduce((total: number, trade: Trade) => {
+    const currentValue = trade.amount * (endingPrice - trade.buyPrice);
+    return total + currentValue;
+  }, 0);
+  const totalProfit = realizedProfit + unrealizedProfit;
+
+  const maxSimultaneousTrades = Math.max(
+    ...Array.from(dailyStats.values()).map((s: DailyStats) => s.max_trade_open),
+    0
+  );
+  const averageSimultaneousTrades = Math.round(
+    dailyStats.size > 0
+      ? Array.from(dailyStats.values()).reduce(
+          (sum: number, s: DailyStats) =>
+            sum +
+            (s.count_minutes > 0 ? s.total_trade_open / s.count_minutes : 0),
+          0
+        ) / dailyStats.size
+      : 0
+  );
+
+  const maxInvest = Math.max(
+    ...Array.from(dailyStats.values()).map((s: DailyStats) => s.max_invest),
     0
   );
 
-  // Regroupement des pourcentages
-  const lowActivityPercentage = activityRanges
-    .filter((r) => r.recommendedMultiplier === 1)
-    .reduce((acc, r) => acc + r.percentage, 0);
+  const nbToken = openTrades.reduce(
+    (sum: number, trade: Trade) => sum + trade.amount,
+    0
+  );
 
-  const mediumActivityPercentage = activityRanges
-    .filter((r) => r.recommendedMultiplier === 1.25)
-    .reduce((acc, r) => acc + r.percentage, 0);
+  const profitPercent = maxInvest > 0 ? (totalProfit / maxInvest) * 100 : 0;
 
-  const highActivityPercentage = activityRanges
-    .filter((r) => r.recommendedMultiplier === 1.5)
-    .reduce((acc, r) => acc + r.percentage, 0);
+  // Préparer les données pour la sauvegarde
+  const strategyTestData = {
+    strategy_id: strategy.id,
+    crypto_id: cryptoId,
+    year,
+    starting_price: startingPrice,
+    ending_price: endingPrice,
+    average_price: averagePrice,
+    percent,
+    max_trade_open: maxSimultaneousTrades,
+    average_trade_open: averageSimultaneousTrades,
+    max_invest: maxInvest,
+    nb_token: nbToken,
+    fees: totalFees,
+    nb_trade_closed: closedTrades.length,
+    nb_trade_open: openTrades.length,
+    profit: totalProfit,
+    profit_percent: profitPercent,
+  };
 
-  const veryHighActivityPercentage = activityRanges
-    .filter((r) => r.recommendedMultiplier === 2)
-    .reduce((acc, r) => acc + r.percentage, 0);
+  // 7. Vérifier une dernière fois qu'un test n'existe pas déjà (protection contre les doublons)
+  const { data: doubleCheckTest } = await supabase
+    .from("strategy_test")
+    .select("id")
+    .eq("strategy_id", strategy.id)
+    .eq("crypto_id", cryptoId)
+    .eq("year", year)
+    .single();
 
-  const explanation = `Analyse de l'activité :
-- Activité normale : ${lowActivityPercentage.toFixed(1)}%
-- Activité légèrement augmentée : ${mediumActivityPercentage.toFixed(1)}%
-- Activité rare : ${highActivityPercentage.toFixed(1)}%
-- Activité très rare : ${veryHighActivityPercentage.toFixed(1)}%
-Recommandation globale basée sur ces proportions.`;
+  if (doubleCheckTest) {
+    console.log(
+      `⚠️ Un test existe déjà pour stratégie ${strategy.id}, récupération au lieu d'insertion`
+    );
+    // Récupérer le test existant avec son historique
+    const { data: history } = await supabase
+      .from("strategy_test_history")
+      .select("*")
+      .eq("strategy_test_id", doubleCheckTest.id)
+      .order("date", { ascending: true });
+
+    const { data: existingTestFull } = await supabase
+      .from("strategy_test")
+      .select("*")
+      .eq("id", doubleCheckTest.id)
+      .single();
+
+    if (existingTestFull) {
+      return {
+        strategy_id: existingTestFull.strategy_id,
+        crypto_id: existingTestFull.crypto_id,
+        year: existingTestFull.year,
+        starting_price: existingTestFull.starting_price,
+        ending_price: existingTestFull.ending_price,
+        average_price: existingTestFull.average_price,
+        percent: existingTestFull.percent,
+        max_trade_open: existingTestFull.max_trade_open,
+        average_trade_open: existingTestFull.average_trade_open,
+        max_invest: existingTestFull.max_invest,
+        nb_token: existingTestFull.nb_token,
+        fees: existingTestFull.fees,
+        nb_trade_closed: existingTestFull.nb_trade_closed,
+        nb_trade_open: existingTestFull.nb_trade_open,
+        profit: existingTestFull.profit,
+        profit_percent: existingTestFull.profit_percent,
+        dailyHistory:
+          history?.map((h) => ({
+            date: h.date,
+            nb_token: h.nb_token,
+            max_trade_open: h.max_trade_open,
+            average_trade_open: h.average_trade_open,
+            average_price: h.average_price,
+            max_invest: h.max_invest,
+            nb_trade_closed: h.nb_trade_closed,
+            nb_trade_open: h.nb_trade_open,
+            profit: h.profit,
+            profit_percent: h.profit_percent,
+          })) || [],
+      };
+    }
+  }
+
+  // 8. Sauvegarder dans strategy_test (une seule insertion par stratégie)
+  console.log(
+    `💾 Tentative de sauvegarde du test pour stratégie ${strategy.id} (${strategy.name})...`
+  );
+  console.log(
+    `📝 Données à sauvegarder:`,
+    JSON.stringify(strategyTestData, null, 2)
+  );
+
+  const { data: savedTest, error: saveError } = await supabase
+    .from("strategy_test")
+    .insert(strategyTestData)
+    .select()
+    .single();
+
+  if (saveError) {
+    // Si l'erreur est due à une contrainte unique, c'est que la contrainte unique en base
+    // ne inclut pas strategy_id, ce qui empêche d'insérer plusieurs stratégies
+    if (saveError.code === "23505") {
+      // 23505 = unique_violation
+      console.warn(
+        `⚠️ Violation de contrainte unique détectée pour (year=${year}, crypto_id=${cryptoId}). La contrainte unique ne inclut pas strategy_id, ce qui empêche d'insérer plusieurs stratégies.`
+      );
+
+      // Vérifier si un test existe pour cette stratégie spécifique
+      const { data: existingForStrategy } = await supabase
+        .from("strategy_test")
+        .select("*")
+        .eq("strategy_id", strategy.id)
+        .eq("crypto_id", cryptoId)
+        .eq("year", year)
+        .maybeSingle();
+
+      if (existingForStrategy) {
+        console.log(
+          `✅ Test trouvé pour stratégie ${strategy.id} après erreur de contrainte, récupération...`
+        );
+        const { data: history } = await supabase
+          .from("strategy_test_history")
+          .select("*")
+          .eq("strategy_test_id", existingForStrategy.id)
+          .order("date", { ascending: true });
+
+        return {
+          strategy_id: existingForStrategy.strategy_id,
+          crypto_id: existingForStrategy.crypto_id,
+          year: existingForStrategy.year,
+          starting_price: existingForStrategy.starting_price,
+          ending_price: existingForStrategy.ending_price,
+          average_price: existingForStrategy.average_price,
+          percent: existingForStrategy.percent,
+          max_trade_open: existingForStrategy.max_trade_open,
+          average_trade_open: existingForStrategy.average_trade_open,
+          max_invest: existingForStrategy.max_invest,
+          nb_token: existingForStrategy.nb_token,
+          fees: existingForStrategy.fees,
+          nb_trade_closed: existingForStrategy.nb_trade_closed,
+          nb_trade_open: existingForStrategy.nb_trade_open,
+          profit: existingForStrategy.profit,
+          profit_percent: existingForStrategy.profit_percent,
+          dailyHistory:
+            history?.map((h) => ({
+              date: h.date,
+              nb_token: h.nb_token,
+              max_trade_open: h.max_trade_open,
+              average_trade_open: h.average_trade_open,
+              average_price: h.average_price,
+              max_invest: h.max_invest,
+              nb_trade_closed: h.nb_trade_closed,
+              nb_trade_open: h.nb_trade_open,
+              profit: h.profit,
+              profit_percent: h.profit_percent,
+            })) || [],
+        };
+      } else {
+        // Il existe un test pour (year, crypto_id) mais avec un autre strategy_id
+        // C'est un problème de contrainte unique qui doit être corrigé en base
+        const { data: existingTest } = await supabase
+          .from("strategy_test")
+          .select("*")
+          .eq("crypto_id", cryptoId)
+          .eq("year", year)
+          .maybeSingle();
+
+        if (existingTest) {
+          console.error(
+            `❌ Un test existe déjà pour (year=${year}, crypto_id=${cryptoId}) mais avec strategy_id=${existingTest.strategy_id}, pas ${strategy.id}. La contrainte unique en base de données doit inclure strategy_id.`
+          );
+          throw new Error(
+            `Impossible d'insérer le test : un test existe déjà pour cette crypto/année avec une autre stratégie (strategy_id=${existingTest.strategy_id}). La contrainte unique en base de données doit être modifiée pour inclure strategy_id.`
+          );
+        }
+      }
+    }
+
+    console.error(`❌ Erreur de sauvegarde:`, saveError);
+    throw new Error(
+      `Erreur lors de la sauvegarde du test pour stratégie ${strategy.id}: ${saveError.message || "Erreur inconnue"} (code: ${saveError.code || "N/A"})`
+    );
+  }
+
+  if (!savedTest) {
+    throw new Error(
+      `Aucune donnée retournée après l'insertion pour stratégie ${strategy.id}`
+    );
+  }
+
+  console.log(
+    `✅ Test sauvegardé avec l'ID: ${savedTest.id} pour stratégie ${strategy.id}`
+  );
+
+  // 9. Préparer et sauvegarder l'historique quotidien (uniquement pour ce test)
+  const historyData = Array.from(dailyStats.values()).map(
+    (stats: DailyStats) => {
+      // Trouver le prix de fin du jour
+      const dayEndPrice =
+        prices.filter((p: PriceData) => p.date === stats.date).slice(-1)[0]
+          ?.price || endingPrice;
+
+      // Calculer le profit du jour (profit réalisé + profit non réalisé)
+      // Pour le profit non réalisé, on prend tous les trades ouverts à la fin du jour
+      // qui ont été ouverts avant ou pendant ce jour
+      const dayEndIndex = prices.findIndex(
+        (p: PriceData) => p.date === stats.date && p.minuteIndex === 1439
+      );
+      const dayEndTimestamp =
+        dayEndIndex >= 0 ? dayEndIndex : prices.length - 1;
+
+      // Tous les trades ouverts à la fin du jour (achetés avant ou pendant ce jour)
+      const dayOpenTrades = trades.filter(
+        (t: Trade) =>
+          t.status === "open" &&
+          t.buyTimestamp !== undefined &&
+          t.buyTimestamp <= dayEndTimestamp
+      );
+      const dayUnrealizedProfit = dayOpenTrades.reduce(
+        (sum: number, trade: Trade) => {
+          return sum + trade.amount * (dayEndPrice - trade.buyPrice);
+        },
+        0
+      );
+      const dayProfit = stats.total_profit + dayUnrealizedProfit;
+      const dayProfitPercent =
+        stats.max_invest > 0 ? (dayProfit / stats.max_invest) * 100 : 0;
+
+      // Calculer le prix moyen du jour
+      const dayPrices = prices.filter((p: PriceData) => p.date === stats.date);
+      const dayAveragePrice =
+        dayPrices.reduce((sum: number, p: PriceData) => sum + p.price, 0) /
+        dayPrices.length;
+
+      return {
+        strategy_test_id: savedTest.id,
+        date: stats.date,
+        nb_token: stats.nb_token,
+        max_trade_open: stats.max_trade_open,
+        average_trade_open: Math.round(
+          stats.count_minutes > 0
+            ? stats.total_trade_open / stats.count_minutes
+            : 0
+        ),
+        average_price: dayAveragePrice,
+        max_invest: stats.max_invest,
+        nb_trade_closed: stats.nb_trade_closed,
+        nb_trade_open: stats.nb_trade_open,
+        profit: dayProfit,
+        profit_percent: dayProfitPercent,
+      };
+    }
+  );
+
+  if (historyData.length > 0) {
+    console.log(
+      `💾 Sauvegarde de ${historyData.length} jour(s) d'historique pour stratégie ${strategy.id} (test ID: ${savedTest.id})`
+    );
+    const { error: historySaveError } = await supabase
+      .from("strategy_test_history")
+      .insert(historyData);
+
+    if (historySaveError) {
+      // Si l'erreur est due à une contrainte unique (doublon), on ignore silencieusement
+      if (historySaveError.code === "23505") {
+        console.warn(
+          `⚠️ Historique déjà présent pour stratégie ${strategy.id}, ignoré`
+        );
+      } else {
+        console.warn(
+          `Erreur lors de la sauvegarde de l'historique pour stratégie ${strategy.id}: ${historySaveError.message}`
+        );
+      }
+    } else {
+      console.log(
+        `✅ Historique sauvegardé avec succès pour stratégie ${strategy.id}`
+      );
+    }
+  }
+
+  console.log(`✅ Test calculé et sauvegardé pour stratégie ${strategy.id}`);
 
   return {
-    recommendedBetMultiplier: Math.round(weightedMultiplier * 100) / 100,
-    highActivityThreshold: highActivityPercentage,
-    lowActivityThreshold: lowActivityPercentage,
-    explanation,
-    // activityRanges,
+    ...strategyTestData,
+    dailyHistory: historyData.map((h) => ({
+      date: h.date,
+      nb_token: h.nb_token,
+      max_trade_open: h.max_trade_open,
+      average_trade_open: h.average_trade_open,
+      average_price: h.average_price,
+      max_invest: h.max_invest,
+      nb_trade_closed: h.nb_trade_closed,
+      nb_trade_open: h.nb_trade_open,
+      profit: h.profit,
+      profit_percent: h.profit_percent,
+    })),
   };
 }
 
 // Fonction principale d'analyse
 async function analyzeTradingStrategy(
   params: TradingAnalysisParams
-): Promise<TradingAnalysisResult> {
-  // Récupérer les données historiques depuis le dossier data
-  const priceData = await fetchCryptoData(params.crypto, params.year);
+): Promise<TradingAnalysisResponse> {
+  const supabase = createServer();
+  const year = parseInt(params.year);
 
-  if (!priceData || priceData.length === 0) {
+  // 1. Récupérer le crypto_id depuis le symbole
+  const { data: cryptoData } = await supabase
+    .from("crypto")
+    .select("id")
+    .eq("symbol", params.crypto.toUpperCase())
+    .single();
+
+  if (!cryptoData) {
+    throw new Error(`Cryptomonnaie "${params.crypto}" non trouvée`);
+  }
+
+  const cryptoId = cryptoData.id;
+
+  // 2. Récupérer toutes les stratégies
+  const { data: strategies, error: strategiesError } = await supabase
+    .from("strategy")
+    .select("*")
+    .order("id", { ascending: true });
+
+  if (strategiesError || !strategies || strategies.length === 0) {
+    throw new Error(
+      `Erreur lors de la récupération des stratégies: ${strategiesError?.message || "Aucune stratégie trouvée"}`
+    );
+  }
+
+  console.log(`📋 ${strategies.length} stratégie(s) trouvée(s)`);
+
+  // 3. Récupérer les données de prix (une seule fois pour toutes les stratégies)
+  const prices = await fetchCryptoData(params.crypto, params.year, cryptoId);
+
+  if (!prices || prices.length === 0) {
     throw new Error("Aucune donnée trouvée pour cette période");
   }
 
-  const currentPrice = priceData[priceData.length - 1];
+  const endingPrice = prices[prices.length - 1].price;
+  console.log(`📊 ${prices.length} minutes de données récupérées`);
 
-  console.log(`🚀 Début de l'analyse pour ${params.crypto} ${params.year}`);
-  console.log(`📊 Nombre de minutes analysés: ${priceData.length}`);
-  console.log(`💰 Prix actuel: ${currentPrice}`);
-
-  // Analyser tous les seuils en parallèle avec Promise.all
-  const analysisPromises = DROP_THRESHOLDS.map(async (threshold) => {
-    console.log(`📈 Analyse du seuil ${threshold}%...`);
-    const result = analyzeTradesForThreshold(priceData, threshold);
-
-    // Calculer les métriques pour ce seuil
-    const closedTrades = result.trades.filter(
-      (trade) => trade.status === "closed"
-    );
-    const openTrades = result.trades.filter((trade) => trade.status === "open");
-
-    const realizedProfit = closedTrades.reduce(
-      (sum, trade) => sum + (trade.profit || 0),
-      0
-    );
-    const totalFees = result.trades.reduce((sum, trade) => sum + trade.fees, 0);
-    const unrealizedProfit = calculateUnrealizedProfit(
-      openTrades,
-      currentPrice
-    );
-    const totalProfit = realizedProfit + unrealizedProfit;
-    const profitPercentage =
-      result.maxSimultaneousTrades > 0
-        ? (totalProfit / (result.maxSimultaneousTrades * TRADE_AMOUNT)) * 100
-        : 0;
-
-    // Calculer les recommandations d'optimisation
-    const betOptimization = calculateBetOptimization(
-      result.simultaneousTradesDistribution
-    );
-
-    return {
-      threshold,
-      totalTrades: result.trades.length,
-      closedTrades: closedTrades.length,
-      openTrades: openTrades.length,
-      realizedProfit,
-      unrealizedProfit,
-      totalProfit,
-      totalFees,
-      dropCount: result.dropCount,
-      maxSimultaneousTrades: result.maxSimultaneousTrades,
-      averageSimultaneousTrades: result.averageSimultaneousTrades,
-      // simultaneousTradesDistribution: result.simultaneousTradesDistribution,
-      // trades: result.trades,
-      profitPercentage,
-      betOptimization,
-    };
-  });
-
-  // Exécuter toutes les analyses en parallèle
-  const thresholdAnalyses = await Promise.all(analysisPromises);
-
-  console.log(`✅ Analyse de tous les seuils terminée`);
-
-  const totalProfit = thresholdAnalyses.reduce(
-    (sum, analysis) => sum + analysis.totalProfit,
-    0
+  // 4. Traiter toutes les stratégies en parallèle pour accélérer les calculs et insertions
+  console.log(
+    `🚀 Démarrage du traitement parallèle de ${strategies.length} stratégie(s)...`
   );
 
-  const realizedProfit = thresholdAnalyses.reduce(
-    (sum, analysis) => sum + analysis.realizedProfit,
-    0
+  const strategyPromises = strategies.map((strategy) =>
+    analyzeStrategy(strategy, cryptoId, year, prices, endingPrice)
+      .then((result) => {
+        console.log(
+          `✅ Stratégie ${strategy.id} (${strategy.name}) traitée avec succès`
+        );
+        return { success: true, result, strategyId: strategy.id };
+      })
+      .catch((error) => {
+        console.error(
+          `❌ Erreur lors de l'analyse de la stratégie ${strategy.id} (${strategy.name}):`,
+          error instanceof Error ? error.message : error
+        );
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Erreur inconnue",
+          strategyId: strategy.id,
+        };
+      })
   );
 
-  const totalFees = thresholdAnalyses.reduce(
-    (sum, analysis) => sum + analysis.totalFees,
-    0
+  // Attendre que toutes les stratégies soient traitées en parallèle
+  const strategyResults = await Promise.allSettled(strategyPromises);
+
+  // Extraire les résultats réussis
+  const results: StrategyAnalysisResult[] = [];
+  for (const settledResult of strategyResults) {
+    if (settledResult.status === "fulfilled") {
+      const result = settledResult.value;
+      if (result.success && "result" in result && result.result) {
+        results.push(result.result);
+      }
+    } else {
+      console.error(`❌ Promesse rejetée:`, settledResult.reason);
+    }
+  }
+
+  console.log(
+    `✅ Analyse terminée: ${results.length} résultat(s) retourné(s) sur ${strategies.length} stratégie(s)`
   );
 
-  const unrealizedProfit = thresholdAnalyses.reduce(
-    (sum, analysis) => sum + analysis.unrealizedProfit,
-    0
-  );
-
-  const maxSimultaneousTrades = thresholdAnalyses.reduce(
-    (sum, analysis) => sum + analysis.maxSimultaneousTrades,
-    0
-  );
-
-  // Calculer les statistiques globales
-  const overallStats = {
-    totalTrades: thresholdAnalyses.reduce(
-      (sum, analysis) => sum + analysis.totalTrades,
-      0
-    ),
-    closedTrades: thresholdAnalyses.reduce(
-      (sum, analysis) => sum + analysis.closedTrades,
-      0
-    ),
-    openTrades: thresholdAnalyses.reduce(
-      (sum, analysis) => sum + analysis.openTrades,
-      0
-    ),
-    totalProfit,
-    totalFees,
-    realizedProfit,
-    unrealizedProfit,
-    maxSimultaneousTrades,
-  };
-
-  // Calculer le nombre maximum de trades possibles (basé sur 20$ par trade)
-  const maxTrades = Math.floor(1000 / TRADE_AMOUNT); // 1000$ / 20$ = 50 trades
-  const remainingTrades = maxTrades - overallStats.totalTrades;
-
-  console.log(`📊 Résultats finaux:`);
-  console.log(`  - Trades totaux: ${overallStats.totalTrades}`);
-  console.log(`  - Trades fermés: ${overallStats.closedTrades}`);
-  console.log(`  - Trades ouverts: ${overallStats.openTrades}`);
-  console.log(`  - Profit réalisé: ${overallStats.realizedProfit.toFixed(2)}$`);
-  console.log(`  - Frais totaux: ${overallStats.totalFees.toFixed(2)}$`);
-
-  // Afficher les résultats par seuil
-  console.log(`📈 Résultats par seuil:`);
-  thresholdAnalyses.forEach((analysis) => {
-    console.log(
-      `  - ${analysis.threshold}%: ${analysis.totalTrades} trades, ${analysis.realizedProfit.toFixed(2)}$ profit, ${analysis.averageSimultaneousTrades.toFixed(2)} trades simultanés en moyenne`
+  if (results.length === 0) {
+    console.warn(
+      `⚠️ Aucun résultat retourné. Vérifiez les logs ci-dessus pour les erreurs.`
     );
-  });
+  }
 
   return {
     crypto: params.crypto,
-    year: params.year,
-    maxTrades,
-    remainingTrades: Math.max(0, remainingTrades),
-    overallStats,
-    thresholdAnalyses,
+    year,
+    results,
   };
 }
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("🚀 Route crypto-trading-analysis appelée");
     const { searchParams } = new URL(request.url);
 
     const params: TradingAnalysisParams = {
@@ -535,14 +890,25 @@ export async function GET(request: NextRequest) {
       year: searchParams.get("year") || "",
     };
 
+    console.log(
+      `📥 Paramètres reçus: crypto=${params.crypto}, year=${params.year}`
+    );
+
     // Valider les paramètres
     const validation = validateParams(params);
     if (!validation.isValid) {
+      console.error(`❌ Validation échouée: ${validation.error}`);
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
+    console.log("✅ Validation réussie, début de l'analyse...");
+
     // Analyser la stratégie de trading
     const analysis = await analyzeTradingStrategy(params);
+
+    console.log(
+      `✅ Analyse terminée, retour de ${analysis.results.length} résultat(s)`
+    );
 
     return NextResponse.json({
       success: true,
